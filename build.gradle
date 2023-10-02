@@ -1,0 +1,59 @@
+plugins {
+    id 'java'
+}
+
+group = 'org.ns'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.jetbrains:annotations:24.0.0'
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+
+sourceSets {
+    main {
+        resources {
+            srcDirs "src/main/resources", "build/native/lib"
+        }
+    }
+}
+
+compileJava {
+    options.compilerArgs += ["-h", file("native/include")]
+}
+
+tasks.register('compileJNI') {
+    dependsOn compileJava
+
+    doLast {
+        exec {
+            workingDir 'native'
+            commandLine 'sh', '-c',  'mkdir -p ../build/libs && make && cp *.a ../build/libs/'
+        }
+    }
+}
+
+clean.doFirst {
+    delete fileTree('native/include') {
+        include 'jni_*.h'
+    }
+}
+
+clean.dependsOn('cleanNative')
+assemble.dependsOn('compileJNI')
+
+tasks.register('cleanNative', Exec) {
+    workingDir 'native'
+    commandLine 'make'
+    args 'clean'
+}
