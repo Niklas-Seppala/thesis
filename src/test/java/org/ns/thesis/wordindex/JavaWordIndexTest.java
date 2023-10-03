@@ -3,7 +3,6 @@ package org.ns.thesis.wordindex;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.Iterator;
 
 class JavaWordIndexTest {
 
@@ -11,7 +10,7 @@ class JavaWordIndexTest {
     void getWordWithContext() throws IOException {
         JavaWordIndex index = new JavaWordIndex("src/test/resources/tfile.txt");
 
-        index.getWordWithContext("lucifer", WordIndex.Context.LARGE_CONTEXT)
+        index.wordsWithContext("lucifer", WordIndex.Context.LARGE_CONTEXT)
                 .stream().map(it -> it.replace('\n', ' '))
                 .forEach(System.out::println);
 
@@ -23,7 +22,7 @@ class JavaWordIndexTest {
     void getWordIteratorWithContext()  {
         try (JavaWordIndex index = new JavaWordIndex("src/test/resources/tfile.txt")) {
 
-            final WordContextIterator iterator = index.getWordIteratorWithContext("god",
+            final WordContextIterator iterator = index.wordIteratorWithContext("god",
                     WordIndex.Context.SMALL_CONTEXT);
 
             try (iterator) {

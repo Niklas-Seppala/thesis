@@ -2,9 +2,9 @@ BINARY=wordindex
 CODEDIRS=. src
 INCDIRS=./include/ /usr/lib/jvm/java-19-openjdk-amd64/include /usr/lib/jvm/java-19-openjdk-amd64/include/linux
 CC=gcc
-SANITIZER=-fsanitize=address -static-libasan
-# SANITIZER=
-DEBUG=-g  -DDBG_HASH -DDBG_POS
+# SANITIZER=-fsanitize=address -static-libasan
+SANITIZER=
+DEBUG=-g -DBG -DDBG_HASH
 MKDIR_P = mkdir -p
 DEPFLAGS=-MP -MD
 OPT=-O0
@@ -16,16 +16,20 @@ CFILES=$(foreach D,$(CODEDIRS),$(wildcard $(D)/*.c))
 OBJECTS=$(patsubst %.c,%.o,$(CFILES))
 DEPFILES=$(patsubst %.c,%.d,$(CFILES))
 
-all: $(BINARY).a
+all: $(BINARY).so
 
-$(BINARY).a: $(OBJECTS)
-	ar -r -o $@ $^
+#$(BINARY).a: $(OBJECTS)
+#	ar -r -o $@ $^
+
+$(BINARY).so: $(OBJECTS)
+	$(CC) -shared -fPIC -o $@ $^
+
 
 %.o:%.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -fPIC -o $@ $<
 
 clean:
-	@rm -rf $(BINARY).a $(BINARY).test $(OBJECTS) test/test.o $(DEPFILES) 2>/dev/null || true
+	@rm -rf $(BINARY).so $(BINARY).test $(OBJECTS) test/test.o $(DEPFILES) 2>/dev/null || true
 
 distribute: clean
 	tar zcvf dist.tgz *

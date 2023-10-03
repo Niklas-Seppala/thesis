@@ -21,7 +21,7 @@ public class JavaWordIndex implements WordIndex {
     }
 
     private static long withContext(long pos, Context ctx) {
-        return Math.max(pos - ctx.asInt(), 0);
+        return Math.max(pos - ctx.size(), 0);
     }
 
     @Override
@@ -30,8 +30,8 @@ public class JavaWordIndex implements WordIndex {
     }
 
     @Override
-    public @NotNull Collection<String> getWordWithContext(@NotNull String word,
-                                                          @NotNull Context ctx) {
+    public @NotNull Collection<String> wordsWithContext(@NotNull String word,
+                                                        @NotNull Context ctx) {
         long start, stop;
         start = System.currentTimeMillis();
 
@@ -45,7 +45,7 @@ public class JavaWordIndex implements WordIndex {
             if (!this.file.getChannel().isOpen()) {
                 this.file = new RandomAccessFile(this.path, READ_MODE);
             }
-            byte[] buffer = new byte[(ctx.asInt() << 1) + entry.word.length()];
+            byte[] buffer = new byte[(ctx.size() << 1) + entry.word.length()];
             for (Long pos : entry.filePositions) {
                 this.file.seek(withContext(pos, ctx));
                 int readBytes = this.file.read(buffer);
@@ -63,7 +63,7 @@ public class JavaWordIndex implements WordIndex {
     }
 
     @Override
-    public @NotNull WordContextIterator getWordIteratorWithContext(@NotNull String word,
+    public @NotNull WordContextIterator wordIteratorWithContext(@NotNull String word,
                                                                 @NotNull Context ctx) {
         WordEntry entry = this.index.get(WordEntry.normalize(word));
         if (entry == null) {
@@ -141,7 +141,7 @@ public class JavaWordIndex implements WordIndex {
             this.file = file;
             this.ctx = ctx;
             this.positions = entry.filePositions.iterator();
-            this.buffer = new byte[(ctx.asInt() << 1) + entry.word.length()];
+            this.buffer = new byte[(ctx.size() << 1) + entry.word.length()];
         }
 
         @Override

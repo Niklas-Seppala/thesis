@@ -42,8 +42,8 @@ WordIndex *file_word_index_open(const char *filepath, size_t capacity,
  */
 void *file_word_index_read_with_context_buffered(WordIndex *index, char *read_buffer,
                                                  size_t read_buffer_size,
-                                                 const char *word, size_t context,
-                                                 void *previous_entry);
+                                                 const char *word, size_t word_len,
+                                                 size_t context, void *previous_entry);
 
 /**
  * @brief

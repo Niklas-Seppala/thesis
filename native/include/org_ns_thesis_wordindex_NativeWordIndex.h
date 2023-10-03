@@ -9,8 +9,12 @@ extern "C" {
 #endif
 #undef org_ns_thesis_wordindex_NativeWordIndex_TERM_BUFFER_MARK
 #define org_ns_thesis_wordindex_NativeWordIndex_TERM_BUFFER_MARK 0L
-#undef org_ns_thesis_wordindex_NativeWordIndex_QUERY_BUFFER_SIZE
-#define org_ns_thesis_wordindex_NativeWordIndex_QUERY_BUFFER_SIZE 4096L
+#undef org_ns_thesis_wordindex_NativeWordIndex_MIN_QUERY_BUFFER_SIZE
+#define org_ns_thesis_wordindex_NativeWordIndex_MIN_QUERY_BUFFER_SIZE 512L
+#undef org_ns_thesis_wordindex_NativeWordIndex_MIN_INDEXING_BUFFER_SIZE
+#define org_ns_thesis_wordindex_NativeWordIndex_MIN_INDEXING_BUFFER_SIZE 4096L
+#undef org_ns_thesis_wordindex_NativeWordIndex_MIN_WORD_CAPACITY_ESTIMATE
+#define org_ns_thesis_wordindex_NativeWordIndex_MIN_WORD_CAPACITY_ESTIMATE 64L
 #undef org_ns_thesis_wordindex_NativeWordIndex_NULL
 #define org_ns_thesis_wordindex_NativeWordIndex_NULL 0LL
 /*
@@ -32,10 +36,18 @@ JNIEXPORT void JNICALL Java_org_ns_thesis_wordindex_NativeWordIndex_wordIndexClo
 /*
  * Class:     org_ns_thesis_wordindex_NativeWordIndex
  * Method:    wordIndexReadWithContextBuffered
- * Signature: (JLjava/nio/ByteBuffer;JLjava/lang/String;IJ)J
+ * Signature: (JLjava/nio/ByteBuffer;JLjava/lang/String;IIJ)J
  */
 JNIEXPORT jlong JNICALL Java_org_ns_thesis_wordindex_NativeWordIndex_wordIndexReadWithContextBuffered
-  (JNIEnv *, jclass, jlong, jobject, jlong, jstring, jint, jlong);
+  (JNIEnv *, jclass, jlong, jobject, jlong, jstring, jint, jint, jlong);
+
+/*
+ * Class:     org_ns_thesis_wordindex_NativeWordIndex
+ * Method:    wordIndexCloseIterator
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_org_ns_thesis_wordindex_NativeWordIndex_wordIndexCloseIterator
+  (JNIEnv *, jclass, jlong);
 
 #ifdef __cplusplus
 }

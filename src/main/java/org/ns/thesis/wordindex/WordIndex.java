@@ -3,14 +3,14 @@ package org.ns.thesis.wordindex;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
-import java.util.Iterator;
 
 public interface WordIndex extends AutoCloseable {
 
-    @NotNull Collection<String> getWordWithContext(@NotNull String word, @NotNull Context ctx);
+    @NotNull Collection<String> wordsWithContext(@NotNull String word, @NotNull Context ctx)
+            throws NativeWordIndex.NativeIndexReadException;
 
-    @NotNull WordContextIterator getWordIteratorWithContext(@NotNull String word,
-                                                            @NotNull Context ctx);
+    @NotNull WordContextIterator wordIteratorWithContext(@NotNull String word,
+                                                         @NotNull Context ctx);
 
     enum Context {
         NO_CONTEXT,
@@ -18,7 +18,7 @@ public interface WordIndex extends AutoCloseable {
         MEDIUM_CONTEXT,
         LARGE_CONTEXT;
 
-        public int asInt() {
+        public int size() {
             return switch (this) {
                 case NO_CONTEXT -> 0;
                 case SMALL_CONTEXT -> 16;

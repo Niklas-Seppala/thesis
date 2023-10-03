@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "org_ns_thesis_wordindex_NativeWordIndex.h"
 #include "therror.h"
 #include "wordindex.h"
@@ -61,25 +63,37 @@ JNIEXPORT void JNICALL Java_org_ns_thesis_wordindex_NativeWordIndex_wordIndexClo
 JNIEXPORT jlong JNICALL
 Java_org_ns_thesis_wordindex_NativeWordIndex_wordIndexReadWithContextBuffered(
     JNIEnv *env, jclass class, jlong handle, jobject jbytebyffer, jlong readBufferSize,
-    jstring jword, jint context, jlong iter) {
+    jstring jword, jint word_len, jint context, jlong iter) {
     NOT_USED(class);
 
     char *buffer = (*env)->GetDirectBufferAddress(env, jbytebyffer);
-    NOT_USED(buffer);
-
     WordIndex *index = (WordIndex *)handle;
 
-    const char *word = NULL;
-    if ((void *)iter != NULL) {
-        word = (*env)->GetStringUTFChars(env, jword, NULL);
+    char *word = NULL;
+    if ((void *)iter == NULL) {
+        word = (char *)(*env)->GetStringUTFChars(env, jword, NULL);
     }
 
     void *result_iter = file_word_index_read_with_context_buffered(
-        index, buffer, readBufferSize, word, context, (void *)iter);
+        index, buffer, readBufferSize, word, word_len, context, (void *)iter);
 
     if (word != NULL) {
         (*env)->ReleaseStringUTFChars(env, jword, word);
     }
 
     return (long)result_iter;
+}
+
+/*
+ * Class:     org_ns_thesis_wordindex_NativeWordIndex
+ * Method:    wordIndexCloseIterator
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL
+Java_org_ns_thesis_wordindex_NativeWordIndex_wordIndexCloseIterator(JNIEnv *env,
+                                                                    jclass class,
+                                                                    jlong iterator) {
+    NOT_USED(env);
+    NOT_USED(class);
+    free((void *)iterator);
 }

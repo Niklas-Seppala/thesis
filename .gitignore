@@ -42,4 +42,6 @@ bin/
 .DS_Store
 
 **/*.o
+**/*.so
+**/*.test
 **/*.d

@@ -38,7 +38,7 @@ tasks.register('compileJNI') {
     doLast {
         exec {
             workingDir 'native'
-            commandLine 'sh', '-c',  'mkdir -p ../build/libs && make && cp *.a ../build/libs/'
+            commandLine 'sh', '-c',  'mkdir -p ../build/libs && make && cp *.so ../build/libs/'
         }
     }
 }
@@ -51,6 +51,12 @@ clean.doFirst {
 
 clean.dependsOn('cleanNative')
 assemble.dependsOn('compileJNI')
+
+tasks.register('testNative', Exec) {
+    workingDir 'native'
+    commandLine 'make'
+    args 'test'
+}
 
 tasks.register('cleanNative', Exec) {
     workingDir 'native'

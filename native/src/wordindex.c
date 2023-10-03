@@ -240,20 +240,20 @@ void *file_word_index_read_context_one_by_one(WordIndex *index, char *read_buffe
 
 void *file_word_index_read_with_context_buffered(WordIndex *index, char *buffer,
                                                  size_t buffer_size, const char *word,
-                                                 size_t ctx, void *existing_iter) {
+                                                 size_t word_len, size_t ctx,
+                                                 void *existing_iter) {
     NONNULL(index);
     NONNULL(buffer);
-    NONNULL(word);
-
-    normalize_word(word);
-
-    struct entry *chain = index->table.table[sdbm_str_hash(word) % index->table.capacity];
 
     // Check if caller is continuing from previous position.
     if (existing_iter != NULL) {
         return read_words_with_ctx(index, existing_iter, buffer, buffer_size, ctx,
-                                   chain->word_len);
+                                   word_len);
     }
+
+    normalize_word(word);
+    struct entry *chain = index->table.table[sdbm_str_hash(word) % index->table.capacity];
+
     // Find word from chain, and start writing words with their context to buffer.
     // Returns NULL, if all words fit to buffer, otherwise returns position to continue
     // from. See above.
@@ -262,8 +262,7 @@ void *file_word_index_read_with_context_buffered(WordIndex *index, char *buffer,
             struct pos_vec_iter *iter = malloc(sizeof(struct pos_vec_iter));
             iter->index = 0;
             iter->vec = &chain->pos_vec;
-            return read_words_with_ctx(index, iter, buffer, buffer_size, ctx,
-                                       chain->word_len);
+            return read_words_with_ctx(index, iter, buffer, buffer_size, ctx, word_len);
         }
         chain = chain->next;
     }
@@ -443,7 +442,17 @@ static void *read_words_with_ctx(WordIndex *index, struct pos_vec_iter *pos_iter
 
     while (pos_vec_iter_has_next(pos_iter)) {
         const FilePosition fpos = pos_vec_iter_next(pos_iter);
-        if ((total_written + default_read_size + sizeof(uint32_t)) > buffer_size) {
+        // TODO: DOC BUG, fixed by reserving space for TERM_BUFFER_MARK
+        /*
+==22234== Invalid write of size 1
+==22234==    at 0x10A3DB: write_u32 (wordindex.c:433)
+==22234==    by 0x10A473: read_words_with_ctx (wordindex.c:448)
+==22234==    by 0x109AC5: file_word_index_read_with_context_buffered (wordindex.c:265)
+==22234==    by 0x10A807: main (test.c:23)
+==22234==  Address 0x67807d1 is 1 bytes after a block of size 4,096 alloc'd
+==22234==    by 0x10A7C5: main (test.c:17)
+        */
+        if ((total_written + default_read_size + (sizeof(uint32_t) << 1)) > buffer_size) {
             // No more room. Mark buffer and rollback iterator
             // so we can access same position next time.
             write_u32(buffer + total_written, TERM_BUFFER_MARK);
