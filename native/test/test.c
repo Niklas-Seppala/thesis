@@ -1,19 +1,20 @@
 #include <ctype.h>
 #include <inttypes.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "wordindex.h"
+#include "windex.h"
 
 #define BUFFER_SIZE 4096
 
 int main(void) {
     WordIndex *index = file_word_index_open("test/tfile.txt", 1024, 8192, true);
 
-    char word[] = "lucifer";
+    char word[] = "god";
     char *buffer = malloc(BUFFER_SIZE);
     enum context ctx = SMALL_CONTEXT;
 
@@ -24,13 +25,13 @@ int main(void) {
             index, buffer, BUFFER_SIZE, word, strlen(word), ctx, remaining);
         char *cursor = buffer;
         while (1) {
-            if ((cursor + 4) - buffer > BUFFER_SIZE) {
+            if ((cursor + sizeof(uint32_t)) - buffer > BUFFER_SIZE) {
                 printf("ERRR\n");
                 abort();
             }
             uint32_t *offset = (uint32_t *)cursor;
             // Terminate reading.
-            if (*offset == TERM_BUFFER_MARK) {
+            if (*offset == BUFF_TERM_MARK) {
                 break;
             }
 

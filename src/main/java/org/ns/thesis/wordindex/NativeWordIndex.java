@@ -30,10 +30,7 @@ public class NativeWordIndex implements WordIndex {
         System.load("/home/nikke/source/java/thesis/build/libs/wordindex.so");
     }
 
-    /**
-     * Handle to native WordIndex.
-     */
-    private final long handle;
+    private final long nativeHandle;
 
     private final int queryBufferSize;
 
@@ -50,7 +47,7 @@ public class NativeWordIndex implements WordIndex {
      * @param shouldCompact        Should index be compacted after indexing is done.
      *                             This will save memory on the long term, with initial
      *                             time cost.
-     * @throws IllegalArgumentException if
+     * @throws IllegalArgumentException when
      *                                  - file path is invalid
      *                                  - indexingBufferSize is <= 0
      *                                  - wordCountEstimate is <= 0
@@ -73,7 +70,7 @@ public class NativeWordIndex implements WordIndex {
             indexingBufferSize = MIN_INDEXING_BUFFER_SIZE;
         }
 
-        this.handle = NativeWordIndex.wordIndexOpen(path, wordCapacityEstimate,
+        this.nativeHandle = NativeWordIndex.wordIndexOpen(path, wordCapacityEstimate,
                 indexingBufferSize,
                 shouldCompact);
     }
@@ -181,7 +178,7 @@ public class NativeWordIndex implements WordIndex {
         try {
             do {
                 nativeIterHandle = NativeWordIndex.wordIndexReadWithContextBuffered(
-                        this.handle,
+                        this.nativeHandle,
                         readBuffer, readBuffer.capacity(), word, wordBytesLength, ctx.size(),
                         nativeIterHandle);
                 while (true) {
@@ -193,7 +190,7 @@ public class NativeWordIndex implements WordIndex {
                     for (; i < offset; i++) {
                         str[i] = readBuffer.get();
                     }
-                    String s = new String(str, 0, i - 1, StandardCharsets.UTF_8);
+                    String s = new String(str, 0, i, StandardCharsets.UTF_8);
                     results.add(s);
                 }
                 readBuffer.rewind();
@@ -222,7 +219,7 @@ public class NativeWordIndex implements WordIndex {
     @NotNull
     public WordContextIterator wordIteratorWithContext(@NotNull String word,
                                                        @NotNull Context ctx) {
-        return new NativeWordContextIterator(this.handle, word, ctx, this.queryBufferSize);
+        return new NativeWordContextIterator(this.nativeHandle, word, ctx, this.queryBufferSize);
     }
 
     /**
@@ -232,7 +229,7 @@ public class NativeWordIndex implements WordIndex {
      */
     @Override
     public void close() throws Exception {
-        NativeWordIndex.wordIndexClose(this.handle);
+        NativeWordIndex.wordIndexClose(this.nativeHandle);
     }
 
     public static class NativeIndexReadException extends Exception {

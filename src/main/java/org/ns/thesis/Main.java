@@ -11,7 +11,7 @@ public class Main {
                 1 << 16,
                 8192, 4096, true);
 
-        index.wordsWithContext("lucifer", WordIndex.Context.SMALL_CONTEXT)
+        index.wordsWithContext("god", WordIndex.Context.SMALL_CONTEXT)
                 .stream()
                 .map(it -> it.replace('\n', ' '))
                 .forEach(System.out::println);

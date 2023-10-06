@@ -1,8 +1,7 @@
 #include <string.h>
 
-#include "org_ns_thesis_wordindex_NativeWordIndex.h"
-#include "therror.h"
-#include "wordindex.h"
+#include "windex.h"
+#include "windex/jni/org_ns_thesis_wordindex_NativeWordIndex.h"
 
 /**
  * @brief

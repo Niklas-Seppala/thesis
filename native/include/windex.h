@@ -1,10 +1,16 @@
-#if !defined(TH_WORD_INDEX_H)
-#define TH_WORD_INDEX_H
+#if !defined(WINDEX_H)
+#define WINDEX_H
+
+#include <stdarg.h>
 #include <stdbool.h>
-#include <stdio.h>
+#include <stdlib.h>
 
-#define TERM_BUFFER_MARK 0
+#define BUFF_TERM_MARK 0
 
+/**
+ * @brief
+ *
+ */
 enum context {
     NO_CONTEXT = 0,
     SMALL_CONTEXT = 16,
@@ -67,4 +73,4 @@ void *file_word_index_read_context_one_by_one(WordIndex *index, char *read_buffe
  */
 void file_word_index_close(WordIndex *index);
 
-#endif  // TH_WORD_INDEX_H
+#endif  // WINDEX_H
