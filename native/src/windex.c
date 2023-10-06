@@ -1,3 +1,12 @@
+/**
+ * @file windex.c
+ * @author Niklas Seppälä
+ * @brief Implementation of word index
+ * @date 2023-10-06
+ *
+ * @copyright Copyright (c) 2023
+ */
+
 #include "windex.h"
 
 #include <ctype.h>
@@ -11,7 +20,6 @@
 #include "windex/utils.h"
 
 #define EQ 0
-#define WHITESPACE " \r\n"
 #define RESIZE_TRESHOLD 0.75f
 
 /**
@@ -28,16 +36,20 @@ struct wordindex {
 // Internal function prototypes
 // ------------------------------------------------------------
 
-static void do_indexing(WordIndex *index, size_t word_buffer_size);
-static struct hash_entry *alloc_entry_chain(const char *word, size_t len, uint32_t hash,
-                                            FilePosition pos);
-static inline bool should_resize(size_t size, size_t cap);
+static void index_file(WordIndex *index, size_t word_buffer_size);
+static struct hash_entry *alloc_entry(const char *word, size_t len, uint32_t hash,
+                                      FilePosition pos);
+static inline bool index_should_resize(size_t size, size_t cap);
 static inline size_t file_pos_with_context(size_t word_position, uint32_t ctx);
 static void do_compaction(WordIndex *index);
-static void redistribute_hash_entries(WordIndex *index);
-static void *read_words_with_ctx(WordIndex *index, struct pos_vec_iter *pos_iter,
-                                 char *buffer, size_t buffer_size, uint32_t ctx,
-                                 size_t word_len);
+static void resize(WordIndex *index);
+static void redistribute_hash_entries(size_t old_capacity, struct hash_entry **old_table,
+                                      size_t new_capacity, struct hash_entry **new_table);
+static struct pos_vec_iter *read_words_with_txt_to_buffer(WordIndex *index,
+                                                          struct pos_vec_iter *pos_iter,
+                                                          char *buffer,
+                                                          size_t buffer_size,
+                                                          uint32_t ctx, size_t word_len);
 static inline uint32_t single_read_size(uint32_t context, size_t word_len);
 
 // ------------------------------------------------------------
@@ -58,7 +70,7 @@ WordIndex *file_word_index_open(const char *filepath, size_t capacity,
     strncpy(index->fname, filepath, fpath_len);
 
     index->word_count = 0;
-    do_indexing(index, word_buffer_size);
+    index_file(index, word_buffer_size);
 
     if (compact) {
         do_compaction(index);
@@ -67,42 +79,6 @@ WordIndex *file_word_index_open(const char *filepath, size_t capacity,
     dbg(index->fname, index->word_count, &index->table);
 #endif
     return index;
-}
-
-void *file_word_index_read_context_one_by_one(WordIndex *index, char *read_buffer,
-                                              size_t read_buffer_size, char *word,
-                                              size_t context, void *existing_iter) {
-    NONNULL(index);
-    NONNULL(read_buffer);
-    NONNULL(word);
-
-    normalize_word(word);
-
-    struct hash_entry *chain = index->table.table[hash(word) % index->table.capacity];
-    size_t single_read_space = single_read_size(context, chain->word_len);
-    if (single_read_space > read_buffer_size) {
-        PRINTF_ERROR("Illegal buffer size: %ld\n", read_buffer_size);
-        return NULL;
-    }
-
-    if (existing_iter != NULL) {
-        return read_words_with_ctx(index, existing_iter, read_buffer, single_read_space,
-                                   context, chain->word_len);
-    } else {
-        while (chain != NULL) {
-            if (strncmp(chain->word, word, chain->word_len) == EQ) {
-                struct pos_vec_iter *iter = malloc(sizeof(struct pos_vec_iter));
-                iter->index = 0;
-                iter->vec = &chain->pos_vec;
-
-                return read_words_with_ctx(index, iter, read_buffer, single_read_space,
-                                           context, chain->word_len);
-            }
-            chain = chain->next;
-        }
-    }
-
-    return NULL;
 }
 
 void *file_word_index_read_with_context_buffered(WordIndex *index, char *buffer,
@@ -114,8 +90,8 @@ void *file_word_index_read_with_context_buffered(WordIndex *index, char *buffer,
 
     // Check if caller is continuing from previous position.
     if (existing_iter != NULL) {
-        return read_words_with_ctx(index, existing_iter, buffer, buffer_size, ctx,
-                                   word_len);
+        return read_words_with_txt_to_buffer(index, existing_iter, buffer, buffer_size,
+                                             ctx, word_len);
     }
 
     normalize_word(word);
@@ -129,7 +105,8 @@ void *file_word_index_read_with_context_buffered(WordIndex *index, char *buffer,
             struct pos_vec_iter *iter = malloc(sizeof(struct pos_vec_iter));
             iter->index = 0;
             iter->vec = &chain->pos_vec;
-            return read_words_with_ctx(index, iter, buffer, buffer_size, ctx, word_len);
+            return read_words_with_txt_to_buffer(index, iter, buffer, buffer_size, ctx,
+                                                 word_len);
         }
         chain = chain->next;
     }
@@ -157,55 +134,61 @@ void file_word_index_close(WordIndex *index) {
 }
 
 /**
- * @brief
+ * @brief Stores word occurance at specified FilePosition
+ * to the index. If word when word already exist in the index,
+ * only file position is stored.
  *
- * @param index
- * @param word
- * @param len
- * @param pos
+ * @param index WordIndex
+ * @param word word
+ * @param word_len word length
+ * @param pos file position
  */
-static void store_word(WordIndex *index, char *word, size_t len, FilePosition pos) {
+static void index_word_at_position(WordIndex *index, char *word, size_t word_len,
+                                   FilePosition pos) {
     NONNULL(index);
     NONNULL(word);
     uint32_t hash_value = hash(word);
 
     const size_t capacity = index->table.capacity;
-    struct hash_entry **chain = index->table.table + (hash_value % capacity);
-    if (*chain == NULL) {
+    struct hash_entry **bucket = index->table.table + (hash_value % capacity);
+    if (*bucket == NULL) {
         // First entry for this bucket.
         index->word_count++;
-        *chain = alloc_entry_chain(word, len, hash_value, pos);
+        *bucket = alloc_entry(word, word_len, hash_value, pos);
     } else {
-        struct hash_entry *chained_entry = *chain;
+        struct hash_entry *entry = *bucket;
         do {
-            if (strncmp(chained_entry->word, word, len) == EQ) {
+            if (strncmp(entry->word, word, word_len) == EQ) {
                 // Found existing entry of word.
-                pos_vec_add(&chained_entry->pos_vec, pos);
+                pos_vec_add(&entry->pos_vec, pos);
                 break;
-            } else if (chained_entry->next == NULL) {
-                // Hash collision, append word entry to chain.
+            } else if (entry->next == NULL) {
+                // Hash collision, add word new entry to the bucket.
                 index->word_count++;
-                chained_entry->next = alloc_entry_chain(word, len, hash_value, pos);
+                entry->next = alloc_entry(word, word_len, hash_value, pos);
                 break;
             }
-        } while ((chained_entry = chained_entry->next));
+        } while ((entry = entry->next));
     }
-    if (should_resize(index->word_count, capacity) > RESIZE_TRESHOLD) {
-        redistribute_hash_entries(index);
+    if (index_should_resize(index->word_count, capacity)) {
+        resize(index);
     }
 }
 
 /**
- * @brief
+ * @brief Reads the file in buffered manner,
+ * and tokenizes the words and stores their file
+ * positions to index.
  *
- * @param index
- * @param word_buffer_size
+ * @param index Index object.
+ * @param word_buffer_size Size of a buffer used in reading
+ *                         words from the file.
  */
-static void do_indexing(WordIndex *index, size_t word_buffer_size) {
+static void index_file(WordIndex *index, size_t word_buffer_size) {
     NONNULL(index);
     char word_buffer[word_buffer_size];
-
     size_t readBytes = 0, position_offset = 0, trunc_offset = 0;
+    const char *WHITESPACE = " \r\n";
     while ((readBytes = fread_unlocked(word_buffer + trunc_offset, sizeof(char),
                                        (word_buffer_size - 1) - trunc_offset,
                                        index->file)) != 0) {
@@ -224,10 +207,10 @@ static void do_indexing(WordIndex *index, size_t word_buffer_size) {
                 break;
             }
 
-            // Analyze token, and store it.
+            // Store the word and it's file position
             FilePosition pos = position_offset + trunc_offset + (str - word_buffer);
             size_t new_len = normalize_word(str);
-            store_word(index, str, new_len, pos);
+            index_word_at_position(index, str, new_len, pos);
 
             // Get next token.
             str = strtok(NULL, WHITESPACE);
@@ -238,16 +221,17 @@ static void do_indexing(WordIndex *index, size_t word_buffer_size) {
 }
 
 /**
- * @brief
+ * @brief Allocates entry object in heap.
  *
- * @param word
- * @param len
- * @param hash
- * @param pos
- * @return struct hash_entry*
+ * @param word Word string
+ * @param len word length
+ * @param hash hash value of the word
+ * @param pos word's file positon
+ *
+ * @return struct hash_entry* Pointer to new entry.
  */
-static struct hash_entry *alloc_entry_chain(const char *word, size_t len, uint32_t hash,
-                                            FilePosition pos) {
+static struct hash_entry *alloc_entry(const char *word, size_t len, uint32_t hash,
+                                      FilePosition pos) {
     struct hash_entry *new_entry = malloc(sizeof(struct hash_entry));
     new_entry->hash = hash;
     new_entry->word_len = len;
@@ -263,53 +247,77 @@ static struct hash_entry *alloc_entry_chain(const char *word, size_t len, uint32
  *
  * @param index
  */
-static void redistribute_hash_entries(WordIndex *index) {
+static void resize(WordIndex *index) {
     struct hash_entry **old_table = index->table.table;
     size_t old_capacity = index->table.capacity;
 
     const size_t new_capacity = old_capacity << 1;
-    index->table.table = calloc(new_capacity, sizeof(struct hash_entry **));
+    struct hash_entry **new_table = calloc(new_capacity, sizeof(struct hash_entry **));
+    redistribute_hash_entries(old_capacity, old_table, new_capacity, new_table);
+    index->table.table = new_table;
     index->table.capacity = new_capacity;
 
-    for (size_t i = 0; i < old_capacity; i++) {
-        struct hash_entry *entry = old_table[i];
-        while (entry != NULL) {
-            // Save next link and terminate chain.
-            struct hash_entry *next_link = entry->next;
-            entry->next = NULL;
-            // TODO: doc
-            struct hash_entry **new_chain =
-                index->table.table + (entry->hash % new_capacity);
-            if (*new_chain == NULL) {
-                // TODO: doc
-                *new_chain = entry;
-            } else {
-                // TODO: doc
-                struct hash_entry *new_chained_entry = *new_chain;
-                while (new_chained_entry->next != NULL)
-                    new_chained_entry = new_chained_entry->next;
-                new_chained_entry->next = entry;
-            }
-            entry = next_link;
-        }
-    }
     free(old_table);
 }
 
 /**
- * @brief
+ * @brief When index needs to resize, entries need to be
+ * redistributed into new hash container. We can avoid rehashing,
+ * as hash value is stored in each entry.
  *
- * @param index
- * @param pos_iter
- * @param buffer
- * @param buffer_size
- * @param ctx
- * @param word_len
- * @return void*
+ * @param old_capacity Old hashtable capacity.
+ * @param old_table  Old hashtable hash container.
+ * @param new_capacity New hashtable capacity.
+ * @param new_table New hashtable hash container.
  */
-static void *read_words_with_ctx(WordIndex *index, struct pos_vec_iter *pos_iter,
-                                 char *buffer, size_t buffer_size, uint32_t ctx,
-                                 size_t word_len) {
+static void redistribute_hash_entries(size_t old_capacity, struct hash_entry **old_table,
+                                      size_t new_capacity,
+                                      struct hash_entry **new_table) {
+    for (size_t i = 0; i < old_capacity; i++) {
+        struct hash_entry *entry = old_table[i];
+        while (entry != NULL) {
+            struct hash_entry *next = entry->next;
+            entry->next = NULL;
+            struct hash_entry *entry_at_new_position =
+                new_table[entry->hash % new_capacity];
+            if (entry_at_new_position == NULL) {
+                // Free slot, store entry here.
+                *(&entry_at_new_position) = entry;
+            } else {
+                // Find a place at existing bucket and store there.
+                while (entry_at_new_position->next != NULL) {
+                    entry_at_new_position = entry_at_new_position->next;
+                }
+                entry_at_new_position->next = entry;
+            }
+            entry = next;
+        }
+    }
+}
+
+/**
+ * @brief Reads words with context from index to fresh buffer. If
+ * results remain to be read after buffer is full, iterator object
+ * is returned.
+ * 
+ * This iterator should be passed as parameter to next method call.
+ * If no more reads are needed, you must free the iterator object
+ * yourself.
+ *
+ * @param index Word index object.
+ * @param pos_iter Iterator, first time NULL
+ * @param buffer buffer to read results into 
+ * @param buffer_size Size of the read buffer
+ * @param ctx Context size.
+ * @param word_len Length of the word.
+ * 
+ * @return struct pos_vec_iter * Iterator object to continue reading.
+ */
+static struct pos_vec_iter *read_words_with_txt_to_buffer(WordIndex *index,
+                                                          struct pos_vec_iter *pos_iter,
+                                                          char *buffer,
+                                                          size_t buffer_size,
+                                                          uint32_t ctx, size_t word_len) {
     size_t total_written = 0;
     uint32_t default_read_size = (ctx << 1) + word_len;
 
@@ -353,9 +361,10 @@ static void *read_words_with_ctx(WordIndex *index, struct pos_vec_iter *pos_iter
 }
 
 /**
- * @brief
+ * @brief Compacts all saved word entry file position vectors
+ * to their current capacity.
  *
- * @param index
+ * @param index Word index object.
  */
 static void do_compaction(WordIndex *index) {
     for (size_t i = 0; i < index->table.capacity; i++) {
@@ -369,34 +378,38 @@ static void do_compaction(WordIndex *index) {
 }
 
 /**
- * @brief
+ * @brief Determines if index should do resizing.
  *
- * @param size
- * @param cap
- * @return true
- * @return false
+ * @param size Current size of the index.
+ * @param cap Capacity of the index hashmap.
+ * 
+ * @return true when index should resize
+ * @return false when not
  */
-static inline bool should_resize(size_t size, size_t cap) {
+static inline bool index_should_resize(size_t size, size_t cap) {
     return (size / (float)cap) > RESIZE_TRESHOLD;
 }
 
 /**
- * @brief
+ * @brief Calculate where to start reading for word, when context
+ * is taken into equation.
  *
- * @param word_position
- * @param ctx
- * @return size_t
+ * @param word_position Position of the word in a file
+ * @param ctx Size of the context.
+ * 
+ * @return size_t Real file position to start reading.
  */
 static inline size_t file_pos_with_context(size_t word_position, uint32_t ctx) {
     return ((int)(word_position <= ctx ? 0 : ((int)word_position - (int)ctx)));
 }
 
 /**
- * @brief
+ * @brief Calculate size of a word read with context in bytes.
  *
- * @param context
- * @param word_len
- * @return uint32_t
+ * @param context Size of the context
+ * @param word_len Word lenght.
+ * 
+ * @return uint32_t Single read size in bytes
  */
 static inline uint32_t single_read_size(uint32_t context, size_t word_len) {
     return (context * 2) + word_len + (sizeof(uint32_t) * 2);

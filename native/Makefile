@@ -40,5 +40,8 @@ clean:
 $(OUT)$(BINARY).test: $(OBJECTS) test/test.o
 	$(CC) -o $@ $^ $(SANITIZER)
 
+test_compile: $(OUT)$(BINARY).test
+	
+
 test: $(OUT)$(BINARY).test
 	@./$(OUT)${BINARY}.test ${RUN_ARGS}

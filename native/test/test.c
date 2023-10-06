@@ -12,7 +12,7 @@
 #define BUFFER_SIZE 4096
 
 int main(void) {
-    WordIndex *index = file_word_index_open("test/tfile.txt", 1024, 8192, true);
+    WordIndex *index = file_word_index_open("test/tfile.txt", 16, 8192, true);
 
     char word[] = "god";
     char *buffer = malloc(BUFFER_SIZE);
@@ -55,33 +55,6 @@ int main(void) {
         }
     }
 
-    // while (1) {
-    //     remaining = file_word_index_read_context_one_by_one(
-    //         index, buffer, BUFFER_SIZE, word, LARGE_CONTEXT, remaining);
-
-    //     char *cursor = buffer;
-
-    //     uint32_t *offset = (uint32_t *)cursor;
-    //     printf("len : %3d ", *offset);
-
-    //     // Print string.
-    //     char *str = cursor + sizeof(uint32_t);
-    //     putc('"', stdout);
-    //     for (uint32_t i = 0; i < *offset; i++) {
-    //         if (str[i] == '\n')
-    //             putc(' ', stdout);
-    //         else
-    //             putc(str[i], stdout);
-    //     }
-    //     putc('"', stdout);
-    //     putc('\n', stdout);
-
-    //     if (remaining == NULL) {
-    //         break;
-    //     } else {
-    //         printf("---------------- buffer is full ----------------\n");
-    //     }
-    // }
     file_word_index_close(index);
     free(buffer);
     return 0;
