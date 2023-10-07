@@ -11,15 +11,12 @@
 
 #define BUFFER_SIZE 4096
 
-int main(void) {
-    WordIndex *index = file_word_index_open("test/tfile.txt", 16, 8192, true);
-
+void query(WordIndex *index) {
     char word[] = "god";
     char *buffer = malloc(BUFFER_SIZE);
     enum context ctx = SMALL_CONTEXT;
-
     void *remaining = NULL;
-
+    int count = 0;
     while (1) {
         remaining = file_word_index_read_with_context_buffered(
             index, buffer, BUFFER_SIZE, word, strlen(word), ctx, remaining);
@@ -34,7 +31,7 @@ int main(void) {
             if (*offset == BUFF_TERM_MARK) {
                 break;
             }
-
+            count++;
             printf("len:%3d ", *offset);
 
             // Print string.
@@ -55,7 +52,13 @@ int main(void) {
         }
     }
 
-    file_word_index_close(index);
+    printf("COUNT: %d\n", count);
     free(buffer);
+}
+
+int main(void) {
+    WordIndex *index = file_word_index_open("test/tfile.txt", 1 << 16, 8192, true);
+    // query(index);
+    file_word_index_close(index);
     return 0;
 }

@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "windex.h"
+#include "windex/utils.h"
 #include "windex/jni/org_ns_thesis_wordindex_NativeWordIndex.h"
 
 /**

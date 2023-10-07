@@ -22,6 +22,8 @@
 #define EQ 0
 #define RESIZE_TRESHOLD 0.75f
 
+static int god_count = 0;
+
 /**
  * @brief Implementation of opaque WordIndex type.
  */
@@ -78,6 +80,7 @@ WordIndex *file_word_index_open(const char *filepath, size_t capacity,
 #ifdef DBG
     dbg(index->fname, index->word_count, &index->table);
 #endif
+    printf("GOD COUNT: %d\n", god_count);
     return index;
 }
 
@@ -148,6 +151,10 @@ static void index_word_at_position(WordIndex *index, char *word, size_t word_len
     NONNULL(index);
     NONNULL(word);
     uint32_t hash_value = hash(word);
+
+    if (strcmp(word, "god") == EQ) {
+        god_count++;
+    }   
 
     const size_t capacity = index->table.capacity;
     struct hash_entry **bucket = index->table.table + (hash_value % capacity);
@@ -248,12 +255,14 @@ static struct hash_entry *alloc_entry(const char *word, size_t len, uint32_t has
  * @param index
  */
 static void resize(WordIndex *index) {
-    struct hash_entry **old_table = index->table.table;
     size_t old_capacity = index->table.capacity;
+    struct hash_entry **old_table = index->table.table;
 
     const size_t new_capacity = old_capacity << 1;
     struct hash_entry **new_table = calloc(new_capacity, sizeof(struct hash_entry **));
+
     redistribute_hash_entries(old_capacity, old_table, new_capacity, new_table);
+    
     index->table.table = new_table;
     index->table.capacity = new_capacity;
 
@@ -276,13 +285,15 @@ static void redistribute_hash_entries(size_t old_capacity, struct hash_entry **o
     for (size_t i = 0; i < old_capacity; i++) {
         struct hash_entry *entry = old_table[i];
         while (entry != NULL) {
+            const uint32_t hash_slot = entry->hash % new_capacity;
+            
             struct hash_entry *next = entry->next;
             entry->next = NULL;
-            struct hash_entry *entry_at_new_position =
-                new_table[entry->hash % new_capacity];
+            
+            struct hash_entry *entry_at_new_position = new_table[hash_slot];
             if (entry_at_new_position == NULL) {
                 // Free slot, store entry here.
-                *(&entry_at_new_position) = entry;
+                new_table[hash_slot] = entry;
             } else {
                 // Find a place at existing bucket and store there.
                 while (entry_at_new_position->next != NULL) {
@@ -290,6 +301,7 @@ static void redistribute_hash_entries(size_t old_capacity, struct hash_entry **o
                 }
                 entry_at_new_position->next = entry;
             }
+
             entry = next;
         }
     }

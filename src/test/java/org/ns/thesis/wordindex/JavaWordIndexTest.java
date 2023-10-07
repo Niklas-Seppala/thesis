@@ -8,7 +8,7 @@ class JavaWordIndexTest {
 
     @Test
     void getWordWithContext() throws IOException {
-        JavaWordIndex index = new JavaWordIndex("src/test/resources/tfile.txt");
+        JavaWordIndex index = new JavaWordIndex("src/test/resources/bible.txt");
 
         index.wordsWithContext("lucifer", WordIndex.Context.LARGE_CONTEXT)
                 .stream().map(it -> it.replace('\n', ' '))
@@ -20,7 +20,7 @@ class JavaWordIndexTest {
 
     @Test
     void getWordIteratorWithContext()  {
-        try (JavaWordIndex index = new JavaWordIndex("src/test/resources/tfile.txt")) {
+        try (JavaWordIndex index = new JavaWordIndex("src/test/resources/bible.txt")) {
 
             final WordContextIterator iterator = index.wordIteratorWithContext("god",
                     WordIndex.Context.SMALL_CONTEXT);

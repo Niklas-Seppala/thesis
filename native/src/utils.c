@@ -60,7 +60,7 @@ uint32_t hash(const void *word) {
 }
 
 #ifdef DBG
-static void dbg(const char *fname, size_t wcount, const struct hash_table *table) {
+void dbg(const char *fname, size_t wcount, const struct hash_table *table) {
     fprintf(stdout, "[WordIndex: (%s) table-capacity: %ld words: %ld]\n", fname,
             table->capacity, wcount);
 
@@ -70,13 +70,13 @@ static void dbg(const char *fname, size_t wcount, const struct hash_table *table
         if (chain == NULL) continue;
         fprintf(stdout, "table[%ld] == ", i);
         while (chain != NULL) {
-            fprintf(stdout, "(\"%s\"", chain->word);
+            fprintf(stdout, "(\"%s\" %ld", chain->word, chain->pos_vec.length);
 #ifdef DBG_POS
             fprintf(stdout, " %ld/%ld - [", chain->pos_vec.length,
                     chain->pos_vec.capacity);
-            for (size_t i = 0; i < chain->pos_vec.length; i++) {
-                fprintf(stdout, "%ld", chain->pos_vec.array[i]);
-                if (i + 1 < chain->pos_vec.length) {
+            for (size_t j = 0; j < chain->pos_vec.length; j++) {
+                fprintf(stdout, "%ld", chain->pos_vec.array[j]);
+                if (j + 1 < chain->pos_vec.length) {
                     putc(',', stdout);
                 }
             }

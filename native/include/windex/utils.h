@@ -142,7 +142,7 @@ uint32_t hash(const void *word);
  * @param wcount
  * @param table
  */
-static void dbg(const char *fname, size_t wcount, const struct hash_table *table);
+void dbg(const char *fname, size_t wcount, const struct hash_table *table);
 #endif
 
 #endif  // WINDEX_UTILS_H

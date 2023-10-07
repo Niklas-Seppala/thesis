@@ -29,7 +29,7 @@ sourceSets {
 }
 
 compileJava {
-    options.compilerArgs += ["-h", file("native/include")]
+    options.compilerArgs += ["-h", file("native/include/windex/jni")]
 }
 
 tasks.register('compileJNI') {
@@ -38,14 +38,14 @@ tasks.register('compileJNI') {
     doLast {
         exec {
             workingDir 'native'
-            commandLine 'sh', '-c',  'mkdir -p ../build/libs && make && cp *.so ../build/libs/'
+            commandLine 'sh', '-c',  'mkdir -p ../build/libs && make && cp out/*.so ../build/libs/'
         }
     }
 }
 
 clean.doFirst {
     delete fileTree('native/include') {
-        include 'jni_*.h'
+        include '**/jni_*.h'
     }
 }
 

@@ -6,8 +6,7 @@ import java.util.Collection;
 
 public interface WordIndex extends AutoCloseable {
 
-    @NotNull Collection<String> wordsWithContext(@NotNull String word, @NotNull Context ctx)
-            throws NativeWordIndex.NativeIndexReadException;
+    @NotNull Collection<String> wordsWithContext(@NotNull String word, @NotNull Context ctx);
 
     @NotNull WordContextIterator wordIteratorWithContext(@NotNull String word,
                                                          @NotNull Context ctx);

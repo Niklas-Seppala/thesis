@@ -27,7 +27,7 @@ public class NativeWordIndex implements WordIndex {
 
 
     static {
-        System.load("/home/nikke/source/java/thesis/build/libs/wordindex.so");
+        System.load(Path.of("build/libs/wordindex.so").toAbsolutePath().toString());
     }
 
     private final long nativeHandle;
@@ -77,7 +77,7 @@ public class NativeWordIndex implements WordIndex {
 
     /**
      * @param preferredSize Size asked for
-     * @param minSize guarantee that buffer has ATLEAST this much room.
+     * @param minSize       guarantee that buffer has ATLEAST this much room.
      * @return Direct buffer with native byte-order.
      */
     @NotNull
@@ -164,8 +164,7 @@ public class NativeWordIndex implements WordIndex {
     @Override
     @NotNull
     public Collection<String> wordsWithContext(@NotNull String word,
-                                               @NotNull Context ctx)
-            throws NativeIndexReadException {
+                                               @NotNull Context ctx) {
         long nativeIterHandle = NULL;
 
         int wordBytesLength = word.getBytes(StandardCharsets.UTF_8).length;
@@ -175,34 +174,25 @@ public class NativeWordIndex implements WordIndex {
                 maxStrLength + Integer.BYTES);
 
         Collection<String> results = new ArrayList<>();
-        try {
-            do {
-                nativeIterHandle = NativeWordIndex.wordIndexReadWithContextBuffered(
-                        this.nativeHandle,
-                        readBuffer, readBuffer.capacity(), word, wordBytesLength, ctx.size(),
-                        nativeIterHandle);
-                while (true) {
-                    int offset = readBuffer.getInt();
-                    if (offset == TERM_BUFFER_MARK) {
-                        break;
-                    }
-                    int i = 0;
-                    for (; i < offset; i++) {
-                        str[i] = readBuffer.get();
-                    }
-                    String s = new String(str, 0, i, StandardCharsets.UTF_8);
-                    results.add(s);
+        do {
+            nativeIterHandle = NativeWordIndex.wordIndexReadWithContextBuffered(
+                    this.nativeHandle,
+                    readBuffer, readBuffer.capacity(), word, wordBytesLength, ctx.size(),
+                    nativeIterHandle);
+            while (true) {
+                int offset = readBuffer.getInt();
+                if (offset == TERM_BUFFER_MARK) {
+                    break;
                 }
-                readBuffer.rewind();
-            } while (nativeIterHandle != NULL);
-        } catch (Throwable t) {
-            t.printStackTrace();
-            throw new NativeIndexReadException("Failed to read words with context", t);
-        } finally {
-            if (nativeIterHandle != NULL) {
-                NativeWordIndex.wordIndexCloseIterator(nativeIterHandle);
+                int length = 0;
+                for (; length < offset; length++) {
+                    str[length] = readBuffer.get();
+                }
+                String s = new String(str, 0, length, StandardCharsets.UTF_8);
+                results.add(s);
             }
-        }
+            readBuffer.rewind();
+        } while (nativeIterHandle != NULL);
 
         return results;
     }
@@ -232,13 +222,6 @@ public class NativeWordIndex implements WordIndex {
         NativeWordIndex.wordIndexClose(this.nativeHandle);
     }
 
-    public static class NativeIndexReadException extends Exception {
-
-        public NativeIndexReadException(String message, Throwable cause) {
-            super(message, cause);
-        }
-    }
-
     /**
      * Reads query results lazily from off-heap memory and instantiates
      * String objects when required to do so.
@@ -250,38 +233,23 @@ public class NativeWordIndex implements WordIndex {
         private final int wordLen;
         private final Context ctx;
         private final long indexHandle;
-        private int offset = TERM_BUFFER_MARK;
-        private long iterHandle;
+        private long iteratorHandle;
 
 
         private NativeWordContextIterator(long indexHandle, @NotNull String word,
                                           @NotNull Context ctx, int queryBufferSize) {
-            this.word = word;
-            this.ctx = ctx;
-
             if (indexHandle == NULL) {
                 throw new IllegalStateException("Index is closed");
             }
+            this.word = word;
+            this.ctx = ctx;
             this.indexHandle = indexHandle;
-
-            this.iterHandle = NULL;
-
+            this.iteratorHandle = NULL;
             this.wordLen = word.getBytes(StandardCharsets.UTF_8).length;
             this.str = new byte[(this.ctx.size() << 1) + wordLen];
-            this.buffer = getNativeBuffer(queryBufferSize,str.length + Integer.BYTES);
-
+            this.buffer = getNativeBuffer(queryBufferSize, str.length + Integer.BYTES);
             this.readIntoBuffer();
-            this.offset = buffer.getInt();
         }
-
-        private void readIntoBuffer() {
-            buffer.rewind();
-            this.iterHandle =
-                    NativeWordIndex.wordIndexReadWithContextBuffered(this.indexHandle,
-                            this.buffer, this.buffer.capacity(), word, wordLen, ctx.size(),
-                            this.iterHandle);
-        }
-
 
         /**
          * @throws Exception it won't
@@ -295,21 +263,48 @@ public class NativeWordIndex implements WordIndex {
 
         @Override
         public boolean hasNext() {
-            return this.iterHandle != NULL && offset != TERM_BUFFER_MARK;
-
+            if (this.bufferHasNext()) {
+                return true;
+            } else {
+                if (this.iteratorHandle != NULL) {
+                    readIntoBuffer();
+                    return this.bufferHasNext();
+                } else {
+                    return false;
+                }
+            }
         }
 
         @Override
         public String next() {
-            int i = 0;
-            for (; i < this.offset; i++) {
-                this.str[i] = this.buffer.get();
+            final int offset = buffer.getInt();
+            int length = 0;
+            for (; length < offset; length++) {
+                this.str[length] = this.buffer.get();
             }
-            this.offset = buffer.getInt();
-            if (this.offset == TERM_BUFFER_MARK) {
-                this.readIntoBuffer();
-            }
-            return new String(this.str, 0, i - 1, StandardCharsets.UTF_8);
+            return new String(this.str, 0, length, StandardCharsets.UTF_8);
+        }
+
+        /**
+         * @return True if current buffer has a string to read.
+         */
+        private boolean bufferHasNext() {
+            buffer.mark();
+            int nextStringLength = buffer.getInt();
+            buffer.reset();
+            return nextStringLength != TERM_BUFFER_MARK;
+        }
+
+        /**
+         * Reads words with context into buffer from native code.
+         * Resets the buffer position to ZERO.
+         */
+        private void readIntoBuffer() {
+            this.iteratorHandle =
+                    NativeWordIndex.wordIndexReadWithContextBuffered(this.indexHandle,
+                            this.buffer, this.buffer.capacity(), word, wordLen, ctx.size(),
+                            this.iteratorHandle);
+            buffer.rewind();
         }
     }
 }

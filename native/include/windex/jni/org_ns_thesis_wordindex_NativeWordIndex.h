@@ -22,34 +22,32 @@ extern "C" {
  * Method:    wordIndexOpen
  * Signature: (Ljava/lang/String;JJZ)J
  */
-JNIEXPORT jlong JNICALL Java_org_ns_thesis_wordindex_NativeWordIndex_wordIndexOpen(
-    JNIEnv *, jclass, jstring, jlong, jlong, jboolean);
+JNIEXPORT jlong JNICALL Java_org_ns_thesis_wordindex_NativeWordIndex_wordIndexOpen
+  (JNIEnv *, jclass, jstring, jlong, jlong, jboolean);
 
 /*
  * Class:     org_ns_thesis_wordindex_NativeWordIndex
  * Method:    wordIndexClose
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL
-Java_org_ns_thesis_wordindex_NativeWordIndex_wordIndexClose(JNIEnv *, jclass, jlong);
+JNIEXPORT void JNICALL Java_org_ns_thesis_wordindex_NativeWordIndex_wordIndexClose
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     org_ns_thesis_wordindex_NativeWordIndex
  * Method:    wordIndexReadWithContextBuffered
  * Signature: (JLjava/nio/ByteBuffer;JLjava/lang/String;IIJ)J
  */
-JNIEXPORT jlong JNICALL
-Java_org_ns_thesis_wordindex_NativeWordIndex_wordIndexReadWithContextBuffered(
-    JNIEnv *, jclass, jlong, jobject, jlong, jstring, jint, jint, jlong);
+JNIEXPORT jlong JNICALL Java_org_ns_thesis_wordindex_NativeWordIndex_wordIndexReadWithContextBuffered
+  (JNIEnv *, jclass, jlong, jobject, jlong, jstring, jint, jint, jlong);
 
 /*
  * Class:     org_ns_thesis_wordindex_NativeWordIndex
  * Method:    wordIndexCloseIterator
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL
-Java_org_ns_thesis_wordindex_NativeWordIndex_wordIndexCloseIterator(JNIEnv *, jclass,
-                                                                    jlong);
+JNIEXPORT void JNICALL Java_org_ns_thesis_wordindex_NativeWordIndex_wordIndexCloseIterator
+  (JNIEnv *, jclass, jlong);
 
 #ifdef __cplusplus
 }
