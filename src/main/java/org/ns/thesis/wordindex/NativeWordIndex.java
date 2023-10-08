@@ -2,6 +2,7 @@ package org.ns.thesis.wordindex;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -32,13 +33,13 @@ public class NativeWordIndex implements WordIndex {
     private final static int MIN_WORD_CAPACITY_ESTIMATE = 64;
     private static final long NULL_PTR = 0;
 
-
     static {
         // TODO: load native library somewhere else.
         System.load(Path.of("build/libs/wordindex.so").toAbsolutePath().toString());
     }
 
     private final long nativeHandle;
+    private final String filepath;
 
     private final int queryBufferSize;
 
@@ -55,19 +56,16 @@ public class NativeWordIndex implements WordIndex {
      * @param shouldCompact        Should index be compacted after indexing is done.
      *                             This will save memory on the long term, with initial
      *                             time cost.
-     * @throws IllegalArgumentException when
-     *                                  - file path is invalid
-     *                                  - indexingBufferSize is <= 0
-     *                                  - wordCountEstimate is <= 0
+     * @throws FileNotFoundException When file path is invalid.
      */
     public NativeWordIndex(@NotNull final String path, long wordCapacityEstimate,
                            long indexingBufferSize, int queryBufferSize,
-                           final boolean shouldCompact) {
+                           final boolean shouldCompact) throws FileNotFoundException {
 
         if (Files.notExists(Path.of(path))) {
-            throw new IllegalArgumentException("Invalid filepath: " + path);
+            throw new FileNotFoundException(path);
         }
-
+        this.filepath = path;
         this.queryBufferSize = Math.max(queryBufferSize, MIN_QUERY_BUFFER_SIZE);
 
         if (wordCapacityEstimate < MIN_WORD_CAPACITY_ESTIMATE) {
@@ -171,8 +169,8 @@ public class NativeWordIndex implements WordIndex {
      */
     @Override
     @NotNull
-    public Collection<String> wordsWithContext(@NotNull String word,
-                                               @NotNull WordIndex.ContextBytes ctx) {
+    public Collection<String> getWords(@NotNull String word,
+                                       @NotNull WordIndex.ContextBytes ctx) {
         long nativeIterHandle = NULL_PTR;
 
         int wordBytesLength = word.getBytes(StandardCharsets.UTF_8).length;
@@ -215,8 +213,12 @@ public class NativeWordIndex implements WordIndex {
      */
     @Override
     @NotNull
-    public WordContextIterator wordIteratorWithContext(@NotNull String word,
-                                                       @NotNull WordIndex.ContextBytes ctx) {
+    public WordContextIterator iterateWords(@NotNull String word,
+                                            @NotNull WordIndex.ContextBytes ctx)
+            throws FileNotFoundException {
+        if (Files.notExists(Path.of(this.filepath))) {
+            throw new FileNotFoundException(filepath);
+        }
         return new NativeWordContextIterator(this.nativeHandle, word, ctx,
                 this.queryBufferSize);
     }

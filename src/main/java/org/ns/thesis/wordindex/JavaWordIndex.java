@@ -6,13 +6,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
+ * Index that indexes words to their positions in the file.
+ *
  * @author Niklas Seppälä
  */
 public class JavaWordIndex implements WordIndex {
@@ -22,48 +22,85 @@ public class JavaWordIndex implements WordIndex {
     private RandomAccessFile file;
 
     /**
+     * Creates Word index over specified text file.
      *
-     * @param path
-     * @throws FileNotFoundException
+     * @param path Path to text file to be indexed.
+     * @throws FileNotFoundException When file path is invalid
      */
     public JavaWordIndex(@NotNull String path) throws FileNotFoundException {
-        if (Files.notExists(Path.of(path))) {
-            throw new IllegalArgumentException("Invalid filepath: " + path);
-        }
-
         this.file = new RandomAccessFile(path, READ_MODE);
         this.path = path;
         this.doIndexing();
     }
 
-    private static long withContext(long pos, @NotNull WordIndex.ContextBytes ctx) {
+    /**
+     * Finds position in a file, when search context size
+     * is calculated.
+     *
+     * @param pos Word position.
+     * @param ctx Context size in bytes.
+     * @return File position from word, with context. No value less than zero is returned.
+     */
+    private static int withContext(int pos, @NotNull WordIndex.ContextBytes ctx) {
         return Math.max(pos - ctx.size(), 0);
     }
 
     /**
+     * Normalizes the word by removing punctuation characters, and
+     * changing all characters to lowercase.
      *
-     * @param word
-     * @param ctx
-     * @return
+     * @param word Word to normalize
+     * @return Normalized word
+     */
+    public static String normalize(String word) {
+        String token = null;
+        for (int i = 0; i < word.length(); i++) {
+            if (!Character.isLetterOrDigit(word.charAt(i))) {
+                token = word.substring(0, i);
+                break;
+            }
+        }
+        if (token == null) {
+            token = word;
+        }
+        return token.toLowerCase();
+
+    }
+
+
+    /**
+     * Query the index for all occurrences of words from indexed file, with specified
+     * amount of context, on both sides of the word.
+     * <pre>
+     *     [ctx word ctx]
+     * </pre>
+     *
+     * @param word Word to search for
+     * @param ctx  The amount of context bytes to surround the word.
+     * @return Collection of words with context.
      */
     @Override
-    public @NotNull Collection<String> wordsWithContext(@NotNull String word,
-                                                        @NotNull WordIndex.ContextBytes ctx) {
+    public @NotNull Collection<String> getWords(@NotNull String word,
+                                                @NotNull WordIndex.ContextBytes ctx) {
         WordEntry entry = this.index.get(normalize(word));
         if (entry == null) {
             return List.of();
         }
 
-        LinkedList<String> results = new LinkedList<>();
+        List<String> results = new ArrayList<>();
         try {
             if (!this.file.getChannel().isOpen()) {
                 this.file = new RandomAccessFile(this.path, READ_MODE);
             }
             byte[] buffer = new byte[(ctx.size() << 1) + entry.word.length()];
-            for (Long pos : entry.filePositions) {
+            for (Integer pos : entry.filePositions) {
+                int actualReadLength = getActualReadLength(ctx, pos, buffer.length);
+
                 this.file.seek(withContext(pos, ctx));
                 int readBytes = this.file.read(buffer);
-                String str = new String(buffer, 0, readBytes, StandardCharsets.UTF_8);
+
+                String str = new String(buffer, 0, Math.min(readBytes, actualReadLength),
+                        StandardCharsets.UTF_8);
                 results.add(str);
             }
         } catch (IOException e) {
@@ -73,35 +110,35 @@ public class JavaWordIndex implements WordIndex {
     }
 
     /**
+     * Queries the index with word with context, results can be accessed through an
+     * iterator.
      *
-     * @param word
-     * @param ctx
-     * @return
+     * @param word Word to search for
+     * @param ctx  The amount of context to surround the word.
+     * @return iterator for query results.
+     * @throws FileNotFoundException when indexed file got deleted.
      */
     @Override
-    public @NotNull WordContextIterator wordIteratorWithContext(@NotNull String word,
-                                                                @NotNull WordIndex.ContextBytes ctx) {
+    public @NotNull WordContextIterator iterateWords(@NotNull String word,
+                                                     @NotNull WordIndex.ContextBytes ctx)
+            throws FileNotFoundException {
         WordEntry entry = this.index.get(normalize(word));
         if (entry == null) {
-            return (WordContextIterator)(Object)Collections.emptyIterator();
+            return (WordContextIterator) (Object) Collections.emptyIterator();
         }
-        try {
-            return new JavaWordContextIterator(new RandomAccessFile(this.path, READ_MODE),
-                    ctx,
-                    entry);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return (WordContextIterator)(Object)Collections.emptyIterator();
-        }
+        return new JavaWordContextIterator(new RandomAccessFile(this.path, READ_MODE),
+                ctx,
+                entry);
+
     }
 
-    /**
-     *
-     * @throws IOException
-     */
     @Override
-    public void close() throws IOException {
-        this.file.close();
+    public void close() {
+        try {
+            this.file.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -110,26 +147,27 @@ public class JavaWordIndex implements WordIndex {
     }
 
     /**
-     *
+     * Tokenizes the file to words, and indexes them by mapping file positions
+     * to words.
      */
-    protected void doIndexing() {
+    private void doIndexing() {
         try {
-            long filePosition = 0L;
+            int position = 0;
             String line;
             while ((line = this.file.readLine()) != null) {
                 for (WordToken token : new LineWordTokenizer(line)) {
                     WordEntry existing = this.index.get(token.word());
                     if (existing != null) {
-                        existing.addFilePosition(filePosition + token.position());
+                        existing.addFilePosition(position + token.position());
                     } else {
                         this.index.put(token.word(), new WordEntry(token.word(),
-                                filePosition + token.position()));
+                                position + token.position()));
                     }
                 }
-                filePosition += line.length() + 1;
+                position += line.length() + 1; // NOTE: +1 because '\n' got trimmed.
             }
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to index file", e);
         } finally {
             try {
                 this.file.close();
@@ -140,23 +178,43 @@ public class JavaWordIndex implements WordIndex {
     }
 
     /**
-     * @author Niklas Seppälä
+     * Basic case for read length is ctx + word + ctx.
+     * When there is not enough leading or trailing bytes to satisfy this case,
+     * we read what we have.
+     *
+     * @param ctx        Context size in bytes
+     * @param pos        file position
+     * @param bufferSize Size of the buffer (basic case)
+     * @return How many bytes we should actually read.
+     */
+    private int getActualReadLength(@NotNull ContextBytes ctx, Integer pos,
+                                    int bufferSize) {
+        int truncateBeginning = pos - ctx.size();
+        int actualReadLength = bufferSize;
+        if (truncateBeginning < 0) {
+            actualReadLength += truncateBeginning;
+        }
+        return actualReadLength;
+    }
+
+    /**
+     * Iterator that iterates over word's file positions, and returns result
+     * strings containing the word + context.
      */
     private static class JavaWordContextIterator implements WordContextIterator {
 
         private final RandomAccessFile file;
         private final ContextBytes ctx;
-        private final Iterator<Long> positions;
+        private final Iterator<Integer> positions;
         private final byte[] buffer;
 
         /**
-         *
-         * @param file
-         * @param ctx
-         * @param entry
+         * @param file  Indexed file.
+         * @param ctx   Search context size in bytes.
+         * @param entry Word file Positions to iterate over.
          */
         public JavaWordContextIterator(@NotNull RandomAccessFile file, @NotNull WordIndex.ContextBytes ctx,
-                                   @NotNull WordEntry entry) {
+                                       @NotNull WordEntry entry) {
             this.file = file;
             this.ctx = ctx;
             this.positions = entry.filePositions.iterator();
@@ -170,7 +228,7 @@ public class JavaWordIndex implements WordIndex {
 
         @Override
         public String next() {
-            long pos = this.positions.next();
+            int pos = this.positions.next();
             try {
                 this.file.seek(withContext(pos, ctx));
                 int readBytes = this.file.read(buffer);
@@ -197,50 +255,31 @@ public class JavaWordIndex implements WordIndex {
     }
 
     /**
-     *
-     * @param word
-     * @return
-     */
-    public static String normalize(String word) {
-        String token = null;
-        for (int i = 0; i < word.length(); i++) {
-            if (!Character.isLetterOrDigit(word.charAt(i))) {
-                token = word.substring(0, i);
-                break;
-            }
-        }
-        if (token == null) {
-            token = word;
-        }
-        return token.toLowerCase();
-
-    }
-
-    /**
-     * @author Niklas Seppälä
+     * Word entry data object, that hold file positions.
+     * Object is comparable by its word.
      */
     private static class WordEntry {
         private final String word;
-        private final List<Long> filePositions;
+        private final List<Integer> filePositions;
 
         /**
+         * Creates new WordEntry object, with initial file position.
          *
-         * @param word
-         * @param initial
+         * @param word    Word
+         * @param initial First position
          */
-        public WordEntry(String word, long initial) {
+        public WordEntry(String word, int initial) {
             this.word = word;
             this.filePositions = new ArrayList<>();
             this.filePositions.add(initial);
         }
 
-
-
         /**
+         * Add file position to this entry.
          *
-         * @param filePosition
+         * @param filePosition Position to add.
          */
-        public void addFilePosition(long filePosition) {
+        public void addFilePosition(int filePosition) {
             this.filePositions.add(filePosition);
         }
 

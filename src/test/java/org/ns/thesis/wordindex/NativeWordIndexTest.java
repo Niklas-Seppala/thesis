@@ -15,7 +15,7 @@ class NativeWordIndexTest {
     private final int occurrences = 4472;
 
     @Test
-    void getWordWithContext() throws Exception {
+    void testGetWords() throws Exception {
         final WordIndex.ContextBytes ctx = WordIndex.ContextBytes.SMALL_CONTEXT;
 
         try (WordIndex index = new NativeWordIndex(TEST_FILE,
@@ -23,21 +23,21 @@ class NativeWordIndexTest {
                 8192, 4096, true)) {
             dumpToFile(index, ctx);
 
-            long count = index.wordsWithContext(searchWord, ctx)
+            long count = index.getWords(searchWord, ctx)
                     .size();
             assertEquals(occurrences, count);
         }
     }
 
     @Test
-    void getWordIteratorWithContext() throws Exception {
+    void testIterateWords() throws Exception {
         final WordIndex.ContextBytes ctx = WordIndex.ContextBytes.SMALL_CONTEXT;
 
         try (WordIndex index = new NativeWordIndex(TEST_FILE,
                 1 << 8,
                 8192, 4096, true)) {
             try (WordContextIterator iterator =
-                         index.wordIteratorWithContext(searchWord, ctx)) {
+                         index.iterateWords(searchWord, ctx)) {
                 long count = iterator.stream().count();
                 assertEquals(occurrences, count);
             }
@@ -48,7 +48,7 @@ class NativeWordIndexTest {
             throws IOException {
         File f = new File("build/results-native");
         try (var writer = new FileWriter(f)) {
-            index.wordIteratorWithContext("god", ctx).stream()
+            index.iterateWords("god", ctx).stream()
                     .map(str -> str.replaceAll("\n", " "))
                     .forEach(str -> {
                         try {

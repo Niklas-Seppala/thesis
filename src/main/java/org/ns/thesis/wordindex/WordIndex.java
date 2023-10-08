@@ -2,6 +2,7 @@ package org.ns.thesis.wordindex;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.io.FileNotFoundException;
 import java.util.Collection;
 
 /**
@@ -19,18 +20,19 @@ public interface WordIndex extends AutoCloseable {
      * @param ctx  The amount of context bytes to surround the word.
      * @return Collection of words with context.
      */
-    @NotNull Collection<String> wordsWithContext(@NotNull String word, @NotNull WordIndex.ContextBytes ctx);
+    @NotNull Collection<String> getWords(@NotNull String word, @NotNull WordIndex.ContextBytes ctx);
 
     /**
      * Queries the index with word with context, results can be accessed through an
      * iterator.
      *
      * @param word Word to search for.
-     * @param ctx The amount of context bytes to surround the word.
+     * @param ctx  The amount of context bytes to surround the word.
      * @return Iterator that iterates over the results.
      */
-    @NotNull WordContextIterator wordIteratorWithContext(@NotNull String word,
-                                                         @NotNull WordIndex.ContextBytes ctx);
+    @NotNull WordContextIterator iterateWords(@NotNull String word,
+                                              @NotNull WordIndex.ContextBytes ctx)
+            throws FileNotFoundException;
 
     /**
      * Context used in {@link WordIndex} queries, to specify the amount of leading

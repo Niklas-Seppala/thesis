@@ -20,7 +20,7 @@ public class Main {
                 .forEach(System.out::println);
 */
 
-        WordContextIterator iter = index.wordIteratorWithContext("god",
+        WordContextIterator iter = index.iterateWords("god",
                 WordIndex.ContextBytes.SMALL_CONTEXT);
         while (iter.hasNext()) {
             Stream.of(iter.next())
