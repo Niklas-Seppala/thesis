@@ -21,7 +21,7 @@ public class Main {
 */
 
         WordContextIterator iter = index.wordIteratorWithContext("god",
-                WordIndex.Context.SMALL_CONTEXT);
+                WordIndex.ContextBytes.SMALL_CONTEXT);
         while (iter.hasNext()) {
             Stream.of(iter.next())
                 .map(it -> it.replace('\n', ' '))

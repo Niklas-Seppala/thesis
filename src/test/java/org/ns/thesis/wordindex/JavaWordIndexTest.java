@@ -2,46 +2,59 @@ package org.ns.thesis.wordindex;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class JavaWordIndexTest {
 
-    @Test
-    void getWordWithContext() throws IOException {
-        JavaWordIndex index = new JavaWordIndex("src/test/resources/bible.txt");
-
-        index.wordsWithContext("lucifer", WordIndex.Context.LARGE_CONTEXT)
-                .stream().map(it -> it.replace('\n', ' '))
-                .forEach(System.out::println);
-
-        System.out.println("\n\n");
-        index.close();
-    }
+    private final String searchWord = "god";
 
     @Test
-    void getWordIteratorWithContext()  {
-        try (JavaWordIndex index = new JavaWordIndex("src/test/resources/bible.txt")) {
+    void getWordWithContext() {
+        try (WordIndex index = new JavaWordIndex("src/test/resources/small.txt")) {
+            long count = index.wordsWithContext(searchWord,
+                            WordIndex.ContextBytes.SMALL_CONTEXT)
+                    .size();
+            assertEquals(5, count);
 
-            final WordContextIterator iterator = index.wordIteratorWithContext("god",
-                    WordIndex.Context.SMALL_CONTEXT);
-
-            try (iterator) {
-                iterator.forEachRemaining(it -> {
-                        System.out.println(it.replace('\n', ' '));
-                });
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     @Test
-    void doIndexing() throws IOException {
-        JavaWordIndex index = new JavaWordIndex("src/test/resources/small.txt");
-        System.out.println(index);
-        index.close();
+    void getWordIteratorWithContext() {
+        try (WordIndex index = new JavaWordIndex("src/test/resources/bible.txt")) {
+            dumpToFile(index);
+
+            try (WordContextIterator iterator = index.wordIteratorWithContext(searchWord,
+                    WordIndex.ContextBytes.SMALL_CONTEXT)) {
+                long count = iterator.stream().count();
+                assertEquals(4472, count);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void dumpToFile(WordIndex index) throws IOException {
+        File f = new File("build/results-java");
+        try (var writer = new FileWriter(f)) {
+            index.wordIteratorWithContext("god",
+                            WordIndex.ContextBytes.SMALL_CONTEXT).stream()
+                    .map(str -> str.replaceAll("\n", " "))
+                    .forEach(str -> {
+                        try {
+                            writer.write(str);
+                            writer.write("\n");
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+        }
     }
 }

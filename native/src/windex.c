@@ -80,7 +80,6 @@ WordIndex *file_word_index_open(const char *filepath, size_t capacity,
 #ifdef DBG
     dbg(index->fname, index->word_count, &index->table);
 #endif
-    printf("GOD COUNT: %d\n", god_count);
     return index;
 }
 
@@ -154,7 +153,7 @@ static void index_word_at_position(WordIndex *index, char *word, size_t word_len
 
     if (strcmp(word, "god") == EQ) {
         god_count++;
-    }   
+    }
 
     const size_t capacity = index->table.capacity;
     struct hash_entry **bucket = index->table.table + (hash_value % capacity);
@@ -194,12 +193,16 @@ static void index_word_at_position(WordIndex *index, char *word, size_t word_len
 static void index_file(WordIndex *index, size_t word_buffer_size) {
     NONNULL(index);
     char word_buffer[word_buffer_size];
-    size_t readBytes = 0, position_offset = 0, trunc_offset = 0;
+    char *next_read_position_in_buffer = word_buffer;
+    size_t readBytes = 0, position_offset = 0, truncate_offset = 0;
+
     const char *WHITESPACE = " \r\n";
-    while ((readBytes = fread_unlocked(word_buffer + trunc_offset, sizeof(char),
-                                       (word_buffer_size - 1) - trunc_offset,
+    while ((readBytes = fread_unlocked(next_read_position_in_buffer, sizeof(char),
+                                       (word_buffer_size - 1) - truncate_offset,
                                        index->file)) != 0) {
-        word_buffer[trunc_offset + readBytes] = '\0';
+        // We use stdlib string functions, so let's make sure last string is
+        // terminated. This is taken into account, we read in buffsize-1 bytes.
+        word_buffer[truncate_offset + readBytes] = '\0';
 
         char *str = strtok(word_buffer, WHITESPACE);
         while (str != NULL) {
@@ -210,19 +213,25 @@ static void index_file(WordIndex *index, size_t word_buffer_size) {
             // word.
             if (str + str_len == word_buffer + (word_buffer_size - 1)) {
                 memmove(word_buffer, str, str_len);
-                trunc_offset = str_len;
+                truncate_offset = str_len;
                 break;
             }
 
             // Store the word and it's file position
-            FilePosition pos = position_offset + trunc_offset + (str - word_buffer);
+            FilePosition pos = position_offset - truncate_offset + (str - word_buffer);
             size_t new_len = normalize_word(str);
             index_word_at_position(index, str, new_len, pos);
 
             // Get next token.
             str = strtok(NULL, WHITESPACE);
+            if (str == NULL) {
+                // Reading buffer is done. Didn't truncate, so reset to zero.
+                truncate_offset = 0;
+            }
         }
-        trunc_offset = 0;
+        // Set the next read position. If we had to truncate, next read should
+        // 'continue' after truncated bytes.
+        next_read_position_in_buffer = word_buffer + truncate_offset;
         position_offset += readBytes;
     }
 }
@@ -262,7 +271,7 @@ static void resize(WordIndex *index) {
     struct hash_entry **new_table = calloc(new_capacity, sizeof(struct hash_entry **));
 
     redistribute_hash_entries(old_capacity, old_table, new_capacity, new_table);
-    
+
     index->table.table = new_table;
     index->table.capacity = new_capacity;
 
@@ -286,10 +295,10 @@ static void redistribute_hash_entries(size_t old_capacity, struct hash_entry **o
         struct hash_entry *entry = old_table[i];
         while (entry != NULL) {
             const uint32_t hash_slot = entry->hash % new_capacity;
-            
+
             struct hash_entry *next = entry->next;
             entry->next = NULL;
-            
+
             struct hash_entry *entry_at_new_position = new_table[hash_slot];
             if (entry_at_new_position == NULL) {
                 // Free slot, store entry here.
@@ -311,18 +320,18 @@ static void redistribute_hash_entries(size_t old_capacity, struct hash_entry **o
  * @brief Reads words with context from index to fresh buffer. If
  * results remain to be read after buffer is full, iterator object
  * is returned.
- * 
+ *
  * This iterator should be passed as parameter to next method call.
  * If no more reads are needed, you must free the iterator object
  * yourself.
  *
  * @param index Word index object.
  * @param pos_iter Iterator, first time NULL
- * @param buffer buffer to read results into 
+ * @param buffer buffer to read results into
  * @param buffer_size Size of the read buffer
  * @param ctx Context size.
  * @param word_len Length of the word.
- * 
+ *
  * @return struct pos_vec_iter * Iterator object to continue reading.
  */
 static struct pos_vec_iter *read_words_with_txt_to_buffer(WordIndex *index,
@@ -394,7 +403,7 @@ static void do_compaction(WordIndex *index) {
  *
  * @param size Current size of the index.
  * @param cap Capacity of the index hashmap.
- * 
+ *
  * @return true when index should resize
  * @return false when not
  */
@@ -408,7 +417,7 @@ static inline bool index_should_resize(size_t size, size_t cap) {
  *
  * @param word_position Position of the word in a file
  * @param ctx Size of the context.
- * 
+ *
  * @return size_t Real file position to start reading.
  */
 static inline size_t file_pos_with_context(size_t word_position, uint32_t ctx) {
@@ -420,7 +429,7 @@ static inline size_t file_pos_with_context(size_t word_position, uint32_t ctx) {
  *
  * @param context Size of the context
  * @param word_len Word lenght.
- * 
+ *
  * @return uint32_t Single read size in bytes
  */
 static inline uint32_t single_read_size(uint32_t context, size_t word_len) {

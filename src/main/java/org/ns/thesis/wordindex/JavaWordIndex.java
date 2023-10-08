@@ -6,36 +6,50 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
+/**
+ * @author Niklas Seppälä
+ */
 public class JavaWordIndex implements WordIndex {
     private static final String READ_MODE = "r";
     private final String path;
     private final Map<@NotNull String, @NotNull WordEntry> index = new HashMap<>();
     private RandomAccessFile file;
 
+    /**
+     *
+     * @param path
+     * @throws FileNotFoundException
+     */
     public JavaWordIndex(@NotNull String path) throws FileNotFoundException {
+        if (Files.notExists(Path.of(path))) {
+            throw new IllegalArgumentException("Invalid filepath: " + path);
+        }
+
         this.file = new RandomAccessFile(path, READ_MODE);
         this.path = path;
         this.doIndexing();
     }
 
-    private static long withContext(long pos, Context ctx) {
+    private static long withContext(long pos, @NotNull WordIndex.ContextBytes ctx) {
         return Math.max(pos - ctx.size(), 0);
     }
 
-    @Override
-    public String toString() {
-        return index.toString();
-    }
-
+    /**
+     *
+     * @param word
+     * @param ctx
+     * @return
+     */
     @Override
     public @NotNull Collection<String> wordsWithContext(@NotNull String word,
-                                                        @NotNull Context ctx) {
-        long start, stop;
-        start = System.currentTimeMillis();
-
-        WordEntry entry = this.index.get(WordEntry.normalize(word));
+                                                        @NotNull WordIndex.ContextBytes ctx) {
+        WordEntry entry = this.index.get(normalize(word));
         if (entry == null) {
             return List.of();
         }
@@ -55,17 +69,19 @@ public class JavaWordIndex implements WordIndex {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        stop = System.currentTimeMillis();
-
-        System.err.println("Took " + (stop - start) + "ms to query \"" + word +
-                "\"");
         return results;
     }
 
+    /**
+     *
+     * @param word
+     * @param ctx
+     * @return
+     */
     @Override
     public @NotNull WordContextIterator wordIteratorWithContext(@NotNull String word,
-                                                                @NotNull Context ctx) {
-        WordEntry entry = this.index.get(WordEntry.normalize(word));
+                                                                @NotNull WordIndex.ContextBytes ctx) {
+        WordEntry entry = this.index.get(normalize(word));
         if (entry == null) {
             return (WordContextIterator)(Object)Collections.emptyIterator();
         }
@@ -74,41 +90,40 @@ public class JavaWordIndex implements WordIndex {
                     ctx,
                     entry);
         } catch (FileNotFoundException e) {
-            //noinspection CallToPrintStackTrace
             e.printStackTrace();
             return (WordContextIterator)(Object)Collections.emptyIterator();
         }
     }
 
+    /**
+     *
+     * @throws IOException
+     */
     @Override
     public void close() throws IOException {
         this.file.close();
     }
 
+    @Override
+    public String toString() {
+        return index.toString();
+    }
+
+    /**
+     *
+     */
     protected void doIndexing() {
-        long start, stop;
-        start = System.currentTimeMillis();
         try {
             long filePosition = 0L;
             String line;
             while ((line = this.file.readLine()) != null) {
-                for (int i = 0, j = 0; i < line.length(); i++) {
-                    if (Character.isWhitespace(
-                            line.charAt(i)) || i + 1 == line.length()) {
-                        if (i > j) {
-                            if (i + 1 == line.length()) {
-                                i++;
-                            }
-                            String word = WordEntry.normalize(line.substring(j, i));
-                            long pos = filePosition + j;
-                            WordEntry existingWordEntry = this.index.get(word);
-                            if (existingWordEntry != null) {
-                                existingWordEntry.addFilePosition(pos);
-                            } else {
-                                this.index.put(word, new WordEntry(word, pos));
-                            }
-                            j = i + 1;
-                        }
+                for (WordToken token : new LineWordTokenizer(line)) {
+                    WordEntry existing = this.index.get(token.word());
+                    if (existing != null) {
+                        existing.addFilePosition(filePosition + token.position());
+                    } else {
+                        this.index.put(token.word(), new WordEntry(token.word(),
+                                filePosition + token.position()));
                     }
                 }
                 filePosition += line.length() + 1;
@@ -119,24 +134,28 @@ public class JavaWordIndex implements WordIndex {
             try {
                 this.file.close();
             } catch (IOException ioe) {
-                //noinspection CallToPrintStackTrace
                 ioe.printStackTrace();
             }
         }
-        stop = System.currentTimeMillis();
-
-        System.err.println("Took " + (stop - start) + "ms to index");
     }
 
+    /**
+     * @author Niklas Seppälä
+     */
     private static class JavaWordContextIterator implements WordContextIterator {
 
         private final RandomAccessFile file;
-        private final Context ctx;
+        private final ContextBytes ctx;
         private final Iterator<Long> positions;
         private final byte[] buffer;
 
-
-        public JavaWordContextIterator(@NotNull RandomAccessFile file, @NotNull Context ctx,
+        /**
+         *
+         * @param file
+         * @param ctx
+         * @param entry
+         */
+        public JavaWordContextIterator(@NotNull RandomAccessFile file, @NotNull WordIndex.ContextBytes ctx,
                                    @NotNull WordEntry entry) {
             this.file = file;
             this.ctx = ctx;
@@ -166,26 +185,61 @@ public class JavaWordIndex implements WordIndex {
             try {
                 this.file.close();
             } catch (IOException e) {
-                //noinspection CallToPrintStackTrace
                 e.printStackTrace();
             }
         }
+
+        @Override
+        public Stream<String> stream() {
+            return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
+                    this, Spliterator.ORDERED), false);
+        }
     }
 
+    /**
+     *
+     * @param word
+     * @return
+     */
+    public static String normalize(String word) {
+        String token = null;
+        for (int i = 0; i < word.length(); i++) {
+            if (!Character.isLetterOrDigit(word.charAt(i))) {
+                token = word.substring(0, i);
+                break;
+            }
+        }
+        if (token == null) {
+            token = word;
+        }
+        return token.toLowerCase();
+
+    }
+
+    /**
+     * @author Niklas Seppälä
+     */
     private static class WordEntry {
         private final String word;
         private final List<Long> filePositions;
 
+        /**
+         *
+         * @param word
+         * @param initial
+         */
         public WordEntry(String word, long initial) {
             this.word = word;
             this.filePositions = new ArrayList<>();
             this.filePositions.add(initial);
         }
 
-        public static String normalize(String word) {
-            return word.replaceAll("\\W", "").toLowerCase();
-        }
 
+
+        /**
+         *
+         * @param filePosition
+         */
         public void addFilePosition(long filePosition) {
             this.filePositions.add(filePosition);
         }

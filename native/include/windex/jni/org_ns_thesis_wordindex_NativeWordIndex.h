@@ -15,8 +15,8 @@ extern "C" {
 #define org_ns_thesis_wordindex_NativeWordIndex_MIN_INDEXING_BUFFER_SIZE 4096L
 #undef org_ns_thesis_wordindex_NativeWordIndex_MIN_WORD_CAPACITY_ESTIMATE
 #define org_ns_thesis_wordindex_NativeWordIndex_MIN_WORD_CAPACITY_ESTIMATE 64L
-#undef org_ns_thesis_wordindex_NativeWordIndex_NULL
-#define org_ns_thesis_wordindex_NativeWordIndex_NULL 0LL
+#undef org_ns_thesis_wordindex_NativeWordIndex_NULL_PTR
+#define org_ns_thesis_wordindex_NativeWordIndex_NULL_PTR 0LL
 /*
  * Class:     org_ns_thesis_wordindex_NativeWordIndex
  * Method:    wordIndexOpen

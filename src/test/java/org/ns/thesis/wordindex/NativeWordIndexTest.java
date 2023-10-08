@@ -2,44 +2,62 @@ package org.ns.thesis.wordindex;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.stream.StreamSupport;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class NativeWordIndexTest {
 
+    public static final String TEST_FILE = "src/test/resources/bible.txt";
+    private final String searchWord = "god";
+    private final int occurrences = 4472;
+
     @Test
     void getWordWithContext() throws Exception {
-        final String searchWord = "god";
-        final WordIndex.Context ctx = WordIndex.Context.SMALL_CONTEXT;
+        final WordIndex.ContextBytes ctx = WordIndex.ContextBytes.SMALL_CONTEXT;
 
-        try (WordIndex index = new NativeWordIndex("src/test/resources/bible.txt",
+        try (WordIndex index = new NativeWordIndex(TEST_FILE,
                 1 << 8,
                 8192, 4096, true)) {
+            dumpToFile(index, ctx);
 
             long count = index.wordsWithContext(searchWord, ctx)
                     .size();
-            assertEquals(4471, count);
+            assertEquals(occurrences, count);
         }
     }
 
     @Test
     void getWordIteratorWithContext() throws Exception {
-        final String searchWord = "god";
-        final WordIndex.Context ctx = WordIndex.Context.SMALL_CONTEXT;
+        final WordIndex.ContextBytes ctx = WordIndex.ContextBytes.SMALL_CONTEXT;
 
-        try (WordIndex index = new NativeWordIndex("src/test/resources/bible.txt",
+        try (WordIndex index = new NativeWordIndex(TEST_FILE,
                 1 << 8,
                 8192, 4096, true)) {
+            try (WordContextIterator iterator =
+                         index.wordIteratorWithContext(searchWord, ctx)) {
+                long count = iterator.stream().count();
+                assertEquals(occurrences, count);
+            }
+        }
+    }
 
-            WordContextIterator iterator = index.wordIteratorWithContext(searchWord, ctx);
-
-            long count = StreamSupport.stream(Spliterators.spliteratorUnknownSize(
-                    iterator, Spliterator.ORDERED), false).count();
-
-            assertEquals(4471, count);
+    private static void dumpToFile(WordIndex index, WordIndex.ContextBytes ctx)
+            throws IOException {
+        File f = new File("build/results-native");
+        try (var writer = new FileWriter(f)) {
+            index.wordIteratorWithContext("god", ctx).stream()
+                    .map(str -> str.replaceAll("\n", " "))
+                    .forEach(str -> {
+                        try {
+                            writer.write(str);
+                            writer.write("\n");
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
         }
     }
 }

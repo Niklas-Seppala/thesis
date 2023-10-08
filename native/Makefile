@@ -3,7 +3,7 @@ CODEDIRS=. src
 INCDIRS=./include/ /usr/lib/jvm/java-19-openjdk-amd64/include /usr/lib/jvm/java-19-openjdk-amd64/include/linux
 CC=gcc
 SANITIZER=
-DEBUG=-g -DDBG -DDBG_HASH
+DEBUG=-g
 MKDIR_P = mkdir -p
 DEPFLAGS=-MP -MD
 OUT=out/
@@ -43,5 +43,5 @@ $(OUT)$(BINARY).test: $(OBJECTS) test/test.o
 test_compile: $(OUT)$(BINARY).test
 	
 
-test: $(OUT)$(BINARY).test
+test: test_compile
 	@./$(OUT)${BINARY}.test ${RUN_ARGS}

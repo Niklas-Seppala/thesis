@@ -9,8 +9,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
+ * Index that indexes words to their positions in the file. File is indexed, and queried
+ * using native library.
+ *
  * @author Niklas Seppälä
  */
 public class NativeWordIndex implements WordIndex {
@@ -23,10 +30,11 @@ public class NativeWordIndex implements WordIndex {
     private final static int MIN_QUERY_BUFFER_SIZE = 512;
     private final static int MIN_INDEXING_BUFFER_SIZE = 4096;
     private final static int MIN_WORD_CAPACITY_ESTIMATE = 64;
-    private static final long NULL = 0;
+    private static final long NULL_PTR = 0;
 
 
     static {
+        // TODO: load native library somewhere else.
         System.load(Path.of("build/libs/wordindex.so").toAbsolutePath().toString());
     }
 
@@ -158,14 +166,14 @@ public class NativeWordIndex implements WordIndex {
      * </pre>
      *
      * @param word Word to search for
-     * @param ctx  The amount of context to surround the word.
+     * @param ctx  The amount of context bytes to surround the word.
      * @return Collection of words with context.
      */
     @Override
     @NotNull
     public Collection<String> wordsWithContext(@NotNull String word,
-                                               @NotNull Context ctx) {
-        long nativeIterHandle = NULL;
+                                               @NotNull WordIndex.ContextBytes ctx) {
+        long nativeIterHandle = NULL_PTR;
 
         int wordBytesLength = word.getBytes(StandardCharsets.UTF_8).length;
         int maxStrLength = (ctx.size() << 1) + wordBytesLength;
@@ -192,7 +200,7 @@ public class NativeWordIndex implements WordIndex {
                 results.add(s);
             }
             readBuffer.rewind();
-        } while (nativeIterHandle != NULL);
+        } while (nativeIterHandle != NULL_PTR);
 
         return results;
     }
@@ -208,8 +216,9 @@ public class NativeWordIndex implements WordIndex {
     @Override
     @NotNull
     public WordContextIterator wordIteratorWithContext(@NotNull String word,
-                                                       @NotNull Context ctx) {
-        return new NativeWordContextIterator(this.nativeHandle, word, ctx, this.queryBufferSize);
+                                                       @NotNull WordIndex.ContextBytes ctx) {
+        return new NativeWordContextIterator(this.nativeHandle, word, ctx,
+                this.queryBufferSize);
     }
 
     /**
@@ -231,20 +240,20 @@ public class NativeWordIndex implements WordIndex {
         private final ByteBuffer buffer;
         private final String word;
         private final int wordLen;
-        private final Context ctx;
+        private final ContextBytes ctx;
         private final long indexHandle;
         private long iteratorHandle;
 
 
         private NativeWordContextIterator(long indexHandle, @NotNull String word,
-                                          @NotNull Context ctx, int queryBufferSize) {
-            if (indexHandle == NULL) {
+                                          @NotNull WordIndex.ContextBytes ctx, int queryBufferSize) {
+            if (indexHandle == NULL_PTR) {
                 throw new IllegalStateException("Index is closed");
             }
             this.word = word;
             this.ctx = ctx;
             this.indexHandle = indexHandle;
-            this.iteratorHandle = NULL;
+            this.iteratorHandle = NULL_PTR;
             this.wordLen = word.getBytes(StandardCharsets.UTF_8).length;
             this.str = new byte[(this.ctx.size() << 1) + wordLen];
             this.buffer = getNativeBuffer(queryBufferSize, str.length + Integer.BYTES);
@@ -252,11 +261,13 @@ public class NativeWordIndex implements WordIndex {
         }
 
         /**
-         * @throws Exception it won't
+         * Closes this iterator, releasing native resources.
          */
         @Override
-        public void close() throws Exception {
-            if (this.hasNext()) {
+        public void close() {
+            // If native method returned NULL_PTR, it already freed
+            // existing iterator, or it never existed.
+            if (this.iteratorHandle != NULL_PTR) {
                 NativeWordIndex.wordIndexCloseIterator(this.indexHandle);
             }
         }
@@ -266,7 +277,7 @@ public class NativeWordIndex implements WordIndex {
             if (this.bufferHasNext()) {
                 return true;
             } else {
-                if (this.iteratorHandle != NULL) {
+                if (this.iteratorHandle != NULL_PTR) {
                     readIntoBuffer();
                     return this.bufferHasNext();
                 } else {
@@ -302,9 +313,16 @@ public class NativeWordIndex implements WordIndex {
         private void readIntoBuffer() {
             this.iteratorHandle =
                     NativeWordIndex.wordIndexReadWithContextBuffered(this.indexHandle,
-                            this.buffer, this.buffer.capacity(), word, wordLen, ctx.size(),
+                            this.buffer, this.buffer.capacity(), word, wordLen,
+                            ctx.size(),
                             this.iteratorHandle);
             buffer.rewind();
+        }
+
+        @Override
+        public Stream<String> stream() {
+            return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
+                    this, Spliterator.ORDERED), false);
         }
     }
 }
