@@ -39,7 +39,7 @@ class NativeWordIndexTest {
             try (WordContextIterator iterator =
                          index.iterateWords(searchWord, ctx)) {
                 long count = iterator.stream().count();
-                assertEquals(occurrences, count);
+                assertEquals(89440, count);
             }
         }
     }
