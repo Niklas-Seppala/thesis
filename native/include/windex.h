@@ -65,22 +65,14 @@ void *file_word_index_read_with_context_buffered(WordIndex *index, char *read_bu
  * @brief
  *
  * @param index
- * @param read_buffer
- * @param read_buffer_size
- * @param word
- * @param context
- * @param previous_entry
- * @return void*
- */
-void *file_word_index_read_context_one_by_one(WordIndex *index, char *read_buffer,
-                                              size_t read_buffer_size, char *word,
-                                              size_t context, void *previous_entry);
-
-/**
- * @brief
- *
- * @param index
  */
 void file_word_index_close(WordIndex *index);
+
+/**
+ * @brief 
+ * 
+ * @param iter 
+ */
+void file_word_index_close_iterator(struct pos_vec_iter *iter);
 
 #endif  // WINDEX_H

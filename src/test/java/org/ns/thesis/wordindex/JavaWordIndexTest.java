@@ -1,6 +1,7 @@
 package org.ns.thesis.wordindex;
 
 import org.junit.jupiter.api.Test;
+import org.ns.thesis.wordindex.pojo.JavaWordIndex;
 
 import java.io.File;
 import java.io.FileWriter;
