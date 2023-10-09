@@ -119,7 +119,7 @@ void *file_word_index_read_with_context_buffered(WordIndex *index, char *buffer,
 }
 
 
-void file_word_index_close_iterator(struct pos_vec_iter *iter) {
+void file_word_index_close_iterator(void *iter) {
     if (iter != NULL) {
         free(iter);
     }

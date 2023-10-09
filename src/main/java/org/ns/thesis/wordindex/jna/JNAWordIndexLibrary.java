@@ -4,8 +4,6 @@ import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 
-import java.nio.ByteBuffer;
-
 /**
  * @author Niklas Seppälä
  */
@@ -38,10 +36,12 @@ public interface JNAWordIndexLibrary extends Library {
      * @param iterator
      * @return
      */
-    Pointer file_word_index_read_with_context_buffered(Pointer handle, ByteBuffer readBuffer,
+    Pointer file_word_index_read_with_context_buffered(Pointer handle, Pointer readBuffer,
                                                        long readBufferSize, String word,
                                                        long wordLength, long context,
                                                        Pointer iterator);
+
+    int wadd(int a, int b);
 
     /**
      *

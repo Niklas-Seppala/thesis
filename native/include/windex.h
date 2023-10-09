@@ -73,6 +73,6 @@ void file_word_index_close(WordIndex *index);
  * 
  * @param iter 
  */
-void file_word_index_close_iterator(struct pos_vec_iter *iter);
+void file_word_index_close_iterator(void *iter);
 
 #endif  // WINDEX_H

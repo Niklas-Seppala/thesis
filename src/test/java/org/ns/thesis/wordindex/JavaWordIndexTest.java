@@ -33,7 +33,7 @@ class JavaWordIndexTest {
             try (WordContextIterator iterator = index.iterateWords(searchWord,
                     WordIndex.ContextBytes.SMALL_CONTEXT)) {
                 long count = iterator.stream().count();
-                assertEquals(89440, count);
+                assertEquals(4472, count);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

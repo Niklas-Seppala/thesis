@@ -1,8 +1,12 @@
 package org.ns.thesis.wordindex.jni;
 
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
 
 public class JNIWordIndexBindings {
+    static {
+        System.load(Path.of("build/libs/wordindex.so").toAbsolutePath().toString());
+    }
 
     /**
      * Creates a native word index for specified file.
