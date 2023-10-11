@@ -1,6 +1,7 @@
 BINARY=wordindex
 CODEDIRS=. src
-INCDIRS=./include/ /usr/lib/jvm/java-19-openjdk-amd64/include /usr/lib/jvm/java-19-openjdk-amd64/include/linux
+JVM_HEADERS= /usr/lib/jvm/java-19-openjdk-amd64/include /usr/lib/jvm/java-19-openjdk-amd64/include/linux
+INCDIRS=./include/ $(JVM_HEADERS)
 CC=gcc
 SANITIZER=
 DEBUG=

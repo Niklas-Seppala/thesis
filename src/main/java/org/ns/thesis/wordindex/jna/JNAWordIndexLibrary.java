@@ -41,8 +41,6 @@ public interface JNAWordIndexLibrary extends Library {
                                                        long wordLength, long context,
                                                        Pointer iterator);
 
-    int wadd(int a, int b);
-
     /**
      *
      * @param handle

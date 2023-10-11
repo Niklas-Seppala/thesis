@@ -18,6 +18,7 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    jvmArgs(['--enable-preview'])
 }
 
 
@@ -31,6 +32,10 @@ sourceSets {
 
 compileJava {
     options.compilerArgs += ["-h", file("native/include/windex/jni")]
+}
+
+tasks.withType(JavaCompile).each {
+    it.options.compilerArgs.add('--enable-preview')
 }
 
 tasks.register('compileJNI') {
