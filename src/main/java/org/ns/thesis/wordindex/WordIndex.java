@@ -13,6 +13,15 @@ import java.util.Collection;
 public interface WordIndex extends AutoCloseable {
 
     /**
+     * 4 byte mark on query buffer that indicates there is
+     * no more bytes to read.
+     */
+    int TERM_BUFFER_MARK = 0;
+    int MIN_QUERY_BUFFER_SIZE = 512;
+    int MIN_INDEXING_BUFFER_SIZE = 4096;
+    int MIN_WORD_CAPACITY_ESTIMATE = 64;
+
+    /**
      * Query the index for all occurrences of words from indexed file, with specified
      * amount of context, on both sides of the word.
      *

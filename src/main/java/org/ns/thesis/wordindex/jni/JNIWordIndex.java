@@ -1,6 +1,8 @@
-package org.ns.thesis.wordindex;
+package org.ns.thesis.wordindex.jni;
 
 import org.jetbrains.annotations.NotNull;
+import org.ns.thesis.wordindex.WordContextIterator;
+import org.ns.thesis.wordindex.WordIndex;
 
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
@@ -21,22 +23,9 @@ import java.util.stream.StreamSupport;
  *
  * @author Niklas Seppälä
  */
-public class NativeWordIndex implements WordIndex {
+public class JNIWordIndex implements WordIndex {
 
-    /**
-     * 4 byte mark on query buffer that indicates there is
-     * no more bytes to read.
-     */
-    private final static int TERM_BUFFER_MARK = 0;
-    private final static int MIN_QUERY_BUFFER_SIZE = 512;
-    private final static int MIN_INDEXING_BUFFER_SIZE = 4096;
-    private final static int MIN_WORD_CAPACITY_ESTIMATE = 64;
     private static final long NULL_PTR = 0;
-
-    static {
-        // TODO: load native library somewhere else.
-        System.load(Path.of("build/libs/wordindex.so").toAbsolutePath().toString());
-    }
 
     private final long nativeHandle;
     private final String filepath;
@@ -58,9 +47,9 @@ public class NativeWordIndex implements WordIndex {
      *                             time cost.
      * @throws FileNotFoundException When file path is invalid.
      */
-    public NativeWordIndex(@NotNull final String path, long wordCapacityEstimate,
-                           long indexingBufferSize, int queryBufferSize,
-                           final boolean shouldCompact) throws FileNotFoundException {
+    public JNIWordIndex(@NotNull final String path, long wordCapacityEstimate,
+                        long indexingBufferSize, int queryBufferSize,
+                        final boolean shouldCompact) throws FileNotFoundException {
 
         if (Files.notExists(Path.of(path))) {
             throw new FileNotFoundException(path);
@@ -76,7 +65,7 @@ public class NativeWordIndex implements WordIndex {
             indexingBufferSize = MIN_INDEXING_BUFFER_SIZE;
         }
 
-        this.nativeHandle = NativeWordIndex.wordIndexOpen(path, wordCapacityEstimate,
+        this.nativeHandle = JNIWordIndexBindings.wordIndexOpen(path, wordCapacityEstimate,
                 indexingBufferSize,
                 shouldCompact);
     }
@@ -93,68 +82,6 @@ public class NativeWordIndex implements WordIndex {
         readBuffer.order(ByteOrder.nativeOrder());
         return readBuffer;
     }
-
-    /**
-     * Creates a native word index for specified file.
-     * Remember to close it!
-     *
-     * @param filepath   Path to text file to be indexed.
-     * @param capacity   Estimate how many unique words file might contain.
-     * @param bufferSize Suggested size of buffer that's used when indexing the file.
-     * @param compact    Should index be compacted after indexing is done.
-     * @return Handle to native WordIndex
-     */
-    private static native long wordIndexOpen(String filepath, long capacity,
-                                             long bufferSize, boolean compact);
-
-    /**
-     * Closes native WordIndex, releasing all native resources.
-     *
-     * @param handle Handle to native WordIndex
-     */
-    private static native void wordIndexClose(long handle);
-
-    /**
-     * Reads words with context from indexed file in buffered manner. If buffer was not
-     * big enough to read all results, iterator handle is returned. Next call to this
-     * method should use that iterator as a parameter to continue where previous call
-     * left.
-     * <p>
-     * <h3>Buffer byte protocol</h3>
-     * Strings are written to read buffer as contiguous span of bytes, lead by 4 byte
-     * integer, specifying string byte length. TERM_BUFFER_MARK == no more strings left
-     * in the buffer.
-     * <p>
-     * Example:
-     * <pre>
-     *     [3ace2of5spades..]
-     * </pre>
-     *
-     * @param handle         Native WordIndex handle
-     * @param readBuffer     Native buffer to read result into
-     * @param readBufferSize Native buffer size
-     * @param word           To search for
-     * @param wordLen        Length of the word in bytes
-     * @param context        Context surrounding the word in indexed file
-     * @param wordIterator   Word file position iterator. Initially should be NULL (0),
-     *                       after that, it should be the return value of this method.
-     * @return Word file position iterator.
-     */
-    private static native long wordIndexReadWithContextBuffered(long handle,
-                                                                ByteBuffer readBuffer,
-                                                                long readBufferSize,
-                                                                String word, int wordLen,
-                                                                int context,
-                                                                long wordIterator);
-
-    /**
-     * Closes native iterator, releasing its resources. Not closing it will cause a
-     * memory leak, IF the iterator was not exhausted. So if you give up on reading, when
-     * there's still results remaining, call this method!
-     *
-     * @param iterator WordIndex word file position iterator.
-     */
-    private static native void wordIndexCloseIterator(long iterator);
 
     /**
      * Query the index for all occurrences of words from indexed file, with specified
@@ -181,7 +108,7 @@ public class NativeWordIndex implements WordIndex {
 
         Collection<String> results = new ArrayList<>();
         do {
-            nativeIterHandle = NativeWordIndex.wordIndexReadWithContextBuffered(
+            nativeIterHandle = JNIWordIndexBindings.wordIndexReadWithContextBuffered(
                     this.nativeHandle,
                     readBuffer, readBuffer.capacity(), word, wordBytesLength, ctx.size(),
                     nativeIterHandle);
@@ -225,12 +152,10 @@ public class NativeWordIndex implements WordIndex {
 
     /**
      * Closes the index, releases native resources.
-     *
-     * @throws Exception It won't.
      */
     @Override
-    public void close() throws Exception {
-        NativeWordIndex.wordIndexClose(this.nativeHandle);
+    public void close() {
+        JNIWordIndexBindings.wordIndexClose(this.nativeHandle);
     }
 
     /**
@@ -270,7 +195,7 @@ public class NativeWordIndex implements WordIndex {
             // If native method returned NULL_PTR, it already freed
             // existing iterator, or it never existed.
             if (this.iteratorHandle != NULL_PTR) {
-                NativeWordIndex.wordIndexCloseIterator(this.indexHandle);
+                JNIWordIndexBindings.wordIndexCloseIterator(this.iteratorHandle);
             }
         }
 
@@ -314,7 +239,7 @@ public class NativeWordIndex implements WordIndex {
          */
         private void readIntoBuffer() {
             this.iteratorHandle =
-                    NativeWordIndex.wordIndexReadWithContextBuffered(this.indexHandle,
+                    JNIWordIndexBindings.wordIndexReadWithContextBuffered(this.indexHandle,
                             this.buffer, this.buffer.capacity(), word, wordLen,
                             ctx.size(),
                             this.iteratorHandle);
