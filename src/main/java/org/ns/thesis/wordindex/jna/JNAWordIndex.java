@@ -27,15 +27,6 @@ import java.util.stream.StreamSupport;
  */
 public class JNAWordIndex implements WordIndex {
 
-    /**
-     * 4 byte mark on query buffer that indicates there is
-     * no more bytes to read.
-     */
-    private final static int TERM_BUFFER_MARK = 0;
-    private final static int MIN_QUERY_BUFFER_SIZE = 512;
-    private final static int MIN_INDEXING_BUFFER_SIZE = 4096;
-    private final static int MIN_WORD_CAPACITY_ESTIMATE = 64;
-
     private final Pointer nativeHandle;
     private final String filepath;
 

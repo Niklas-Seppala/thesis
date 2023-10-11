@@ -1,10 +1,8 @@
 package org.ns.thesis.wordindex.ffm;
 
 import org.junit.jupiter.api.Test;
+import org.ns.thesis.wordindex.WordContextIterator;
 import org.ns.thesis.wordindex.WordIndex;
-import org.ns.thesis.wordindex.jni.JNIWordIndex;
-
-import java.io.FileNotFoundException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -14,7 +12,7 @@ class FFMWordIndexTest {
     void getWords() throws Exception {
         final WordIndex.ContextBytes ctx = WordIndex.ContextBytes.SMALL_CONTEXT;
 
-        try (WordIndex index = new JNIWordIndex("src/test/resources/bible.txt",
+        try (WordIndex index = new FFMWordIndex("src/test/resources/bible.txt",
                 1 << 8,
                 8192, 4096, true)) {
 
@@ -24,6 +22,16 @@ class FFMWordIndexTest {
     }
 
     @Test
-    void iterateWords() {
+    void testIterateWords() throws Exception {
+        final WordIndex.ContextBytes ctx = WordIndex.ContextBytes.SMALL_CONTEXT;
+        try (WordIndex index = new FFMWordIndex("src/test/resources/bible.txt",
+                1 << 8,
+                8192, 4096, true)) {
+            try (WordContextIterator iterator =
+                         index.iterateWords("god", ctx)) {
+                long count = iterator.stream().count();
+                assertEquals(4472, count);
+            }
+        }
     }
 }

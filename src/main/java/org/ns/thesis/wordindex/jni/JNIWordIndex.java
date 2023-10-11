@@ -25,14 +25,6 @@ import java.util.stream.StreamSupport;
  */
 public class JNIWordIndex implements WordIndex {
 
-    /**
-     * 4 byte mark on query buffer that indicates there is
-     * no more bytes to read.
-     */
-    private final static int TERM_BUFFER_MARK = 0;
-    private final static int MIN_QUERY_BUFFER_SIZE = 512;
-    private final static int MIN_INDEXING_BUFFER_SIZE = 4096;
-    private final static int MIN_WORD_CAPACITY_ESTIMATE = 64;
     private static final long NULL_PTR = 0;
 
     private final long nativeHandle;
@@ -160,11 +152,9 @@ public class JNIWordIndex implements WordIndex {
 
     /**
      * Closes the index, releases native resources.
-     *
-     * @throws Exception It won't.
      */
     @Override
-    public void close() throws Exception {
+    public void close() {
         JNIWordIndexBindings.wordIndexClose(this.nativeHandle);
     }
 

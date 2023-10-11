@@ -3,7 +3,6 @@ package org.ns.thesis.wordindex.jni;
 import org.junit.jupiter.api.Test;
 import org.ns.thesis.wordindex.WordContextIterator;
 import org.ns.thesis.wordindex.WordIndex;
-import org.ns.thesis.wordindex.jna.JNAWordIndex;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -23,7 +22,7 @@ class JNIWordIndexTest {
         try (WordIndex index = new JNIWordIndex(TEST_FILE,
                 1 << 8,
                 8192, 4096, true)) {
-            dumpToFile(index, ctx);
+            //dumpToFile(index, ctx);
 
             long count = index.getWords(searchWord, ctx)
                     .size();
