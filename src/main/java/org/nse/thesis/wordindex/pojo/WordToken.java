@@ -1,4 +1,4 @@
-package org.ns.thesis.wordindex.pojo;
+package org.nse.thesis.wordindex.pojo;
 
 import org.jetbrains.annotations.NotNull;
 

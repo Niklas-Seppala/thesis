@@ -1,9 +1,9 @@
-package org.ns.thesis.wordindex.jna;
+package org.nse.thesis.wordindex.jni;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.ns.thesis.wordindex.WordContextIterator;
-import org.ns.thesis.wordindex.WordIndex;
-import org.ns.thesis.wordindex.jna.JNAWordIndex;
+import org.nse.thesis.wordindex.WordContextIterator;
+import org.nse.thesis.wordindex.WordIndex;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -11,19 +11,24 @@ import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class JNAWordIndexTest {
+class JNIWordIndexTest {
 
     public static final String TEST_FILE = "src/test/resources/bible.txt";
     private final String searchWord = "god";
+
+    @BeforeAll
+    public static void loadLib() {
+        JNIWordIndexBindings.load("build/libs/wordindex.so");
+    }
 
     @Test
     void testGetWords() throws Exception {
         final WordIndex.ContextBytes ctx = WordIndex.ContextBytes.SMALL_CONTEXT;
 
-        try (WordIndex index = new JNAWordIndex(TEST_FILE,
+        try (WordIndex index = new JNIWordIndex(TEST_FILE,
                 1 << 8,
                 8192, 4096, true)) {
-            dumpToFile(index, ctx);
+            //dumpToFile(index, ctx);
 
             long count = index.getWords(searchWord, ctx)
                     .size();
@@ -34,7 +39,7 @@ class JNAWordIndexTest {
     @Test
     void testIterateWords() throws Exception {
         final WordIndex.ContextBytes ctx = WordIndex.ContextBytes.SMALL_CONTEXT;
-        try (WordIndex index = new JNAWordIndex(TEST_FILE,
+        try (WordIndex index = new JNIWordIndex(TEST_FILE,
                 1 << 8,
                 8192, 4096, true)) {
             try (WordContextIterator iterator =

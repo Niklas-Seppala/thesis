@@ -1,4 +1,4 @@
-package org.ns.thesis.wordindex;
+package org.nse.thesis.wordindex;
 
 import java.util.Iterator;
 import java.util.stream.Stream;

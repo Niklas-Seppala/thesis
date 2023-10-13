@@ -1,9 +1,9 @@
-package org.ns.thesis.wordindex;
+package org.nse.thesis.wordindex;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.ns.thesis.wordindex.pojo.LineWordTokenizer;
-import org.ns.thesis.wordindex.pojo.WordToken;
+import org.nse.thesis.wordindex.pojo.LineWordTokenizer;
+import org.nse.thesis.wordindex.pojo.WordToken;
 
 import java.util.Iterator;
 import java.util.List;

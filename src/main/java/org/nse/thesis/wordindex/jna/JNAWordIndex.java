@@ -1,8 +1,10 @@
-package org.ns.thesis.wordindex.jni;
+package org.nse.thesis.wordindex.jna;
 
+import com.sun.jna.Native;
+import com.sun.jna.Pointer;
 import org.jetbrains.annotations.NotNull;
-import org.ns.thesis.wordindex.WordContextIterator;
-import org.ns.thesis.wordindex.WordIndex;
+import org.nse.thesis.wordindex.WordContextIterator;
+import org.nse.thesis.wordindex.WordIndex;
 
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
@@ -23,11 +25,9 @@ import java.util.stream.StreamSupport;
  *
  * @author Niklas Seppälä
  */
-public class JNIWordIndex implements WordIndex {
+public class JNAWordIndex implements WordIndex {
 
-    private static final long NULL_PTR = 0;
-
-    private final long nativeHandle;
+    private final Pointer nativeHandle;
     private final String filepath;
 
     private final int queryBufferSize;
@@ -47,7 +47,7 @@ public class JNIWordIndex implements WordIndex {
      *                             time cost.
      * @throws FileNotFoundException When file path is invalid.
      */
-    public JNIWordIndex(@NotNull final String path, long wordCapacityEstimate,
+    public JNAWordIndex(@NotNull final String path, long wordCapacityEstimate,
                         long indexingBufferSize, int queryBufferSize,
                         final boolean shouldCompact) throws FileNotFoundException {
 
@@ -65,7 +65,7 @@ public class JNIWordIndex implements WordIndex {
             indexingBufferSize = MIN_INDEXING_BUFFER_SIZE;
         }
 
-        this.nativeHandle = JNIWordIndexBindings.wordIndexOpen(path, wordCapacityEstimate,
+        this.nativeHandle = JNAWordIndexLibrary.INSTANCE.file_word_index_open(path, wordCapacityEstimate,
                 indexingBufferSize,
                 shouldCompact);
     }
@@ -98,7 +98,7 @@ public class JNIWordIndex implements WordIndex {
     @NotNull
     public Collection<String> getWords(@NotNull String word,
                                        @NotNull WordIndex.ContextBytes ctx) {
-        long nativeIterHandle = NULL_PTR;
+        Pointer nativeIterHandle = Pointer.NULL;
 
         int wordBytesLength = word.getBytes(StandardCharsets.UTF_8).length;
         int maxStrLength = (ctx.size() << 1) + wordBytesLength;
@@ -108,9 +108,9 @@ public class JNIWordIndex implements WordIndex {
 
         Collection<String> results = new ArrayList<>();
         do {
-            nativeIterHandle = JNIWordIndexBindings.wordIndexReadWithContextBuffered(
+            nativeIterHandle = JNAWordIndexLibrary.INSTANCE.file_word_index_read_with_context_buffered(
                     this.nativeHandle,
-                    readBuffer, readBuffer.capacity(), word, wordBytesLength, ctx.size(),
+                    Native.getDirectBufferPointer(readBuffer), readBuffer.capacity(), word, wordBytesLength, ctx.size(),
                     nativeIterHandle);
             while (true) {
                 int offset = readBuffer.getInt();
@@ -125,7 +125,7 @@ public class JNIWordIndex implements WordIndex {
                 results.add(s);
             }
             readBuffer.rewind();
-        } while (nativeIterHandle != NULL_PTR);
+        } while (nativeIterHandle != Pointer.NULL);
 
         return results;
     }
@@ -155,7 +155,7 @@ public class JNIWordIndex implements WordIndex {
      */
     @Override
     public void close() {
-        JNIWordIndexBindings.wordIndexClose(this.nativeHandle);
+        JNAWordIndexLibrary.INSTANCE.file_word_index_close(this.nativeHandle);
     }
 
     /**
@@ -168,19 +168,19 @@ public class JNIWordIndex implements WordIndex {
         private final String word;
         private final int wordLen;
         private final ContextBytes ctx;
-        private final long indexHandle;
-        private long iteratorHandle;
+        private final Pointer indexHandle;
+        private Pointer iteratorHandle;
 
 
-        private NativeWordContextIterator(long indexHandle, @NotNull String word,
+        private NativeWordContextIterator(Pointer indexHandle, @NotNull String word,
                                           @NotNull WordIndex.ContextBytes ctx, int queryBufferSize) {
-            if (indexHandle == NULL_PTR) {
+            if (indexHandle == Pointer.NULL) {
                 throw new IllegalStateException("Index is closed");
             }
             this.word = word;
             this.ctx = ctx;
             this.indexHandle = indexHandle;
-            this.iteratorHandle = NULL_PTR;
+            this.iteratorHandle = Pointer.NULL;
             this.wordLen = word.getBytes(StandardCharsets.UTF_8).length;
             this.str = new byte[(this.ctx.size() << 1) + wordLen];
             this.buffer = getNativeBuffer(queryBufferSize, str.length + Integer.BYTES);
@@ -194,8 +194,8 @@ public class JNIWordIndex implements WordIndex {
         public void close() {
             // If native method returned NULL_PTR, it already freed
             // existing iterator, or it never existed.
-            if (this.iteratorHandle != NULL_PTR) {
-                JNIWordIndexBindings.wordIndexCloseIterator(this.iteratorHandle);
+            if (this.iteratorHandle != Pointer.NULL) {
+                JNAWordIndexLibrary.INSTANCE.file_word_index_close_iterator(this.iteratorHandle);
             }
         }
 
@@ -204,7 +204,7 @@ public class JNIWordIndex implements WordIndex {
             if (this.bufferHasNext()) {
                 return true;
             } else {
-                if (this.iteratorHandle != NULL_PTR) {
+                if (this.iteratorHandle != Pointer.NULL) {
                     readIntoBuffer();
                     return this.bufferHasNext();
                 } else {
@@ -239,8 +239,8 @@ public class JNIWordIndex implements WordIndex {
          */
         private void readIntoBuffer() {
             this.iteratorHandle =
-                    JNIWordIndexBindings.wordIndexReadWithContextBuffered(this.indexHandle,
-                            this.buffer, this.buffer.capacity(), word, wordLen,
+                    JNAWordIndexLibrary.INSTANCE.file_word_index_read_with_context_buffered(this.indexHandle,
+                            Native.getDirectBufferPointer(this.buffer), this.buffer.capacity(), word, wordLen,
                             ctx.size(),
                             this.iteratorHandle);
             buffer.rewind();

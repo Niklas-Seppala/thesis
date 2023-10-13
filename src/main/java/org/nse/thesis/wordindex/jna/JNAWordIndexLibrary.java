@@ -1,4 +1,4 @@
-package org.ns.thesis.wordindex.jna;
+package org.nse.thesis.wordindex.jna;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;

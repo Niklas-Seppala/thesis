@@ -1,11 +1,15 @@
-package org.ns.thesis.wordindex.jni;
+package org.nse.thesis.wordindex.jni;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 
 public class JNIWordIndexBindings {
-    static {
-        System.load(Path.of("build/libs/wordindex.so").toAbsolutePath().toString());
+    private static boolean loaded = false;
+    public static void load(String path) {
+        if (!loaded) {
+            System.load(Path.of(path).toAbsolutePath().toString());
+            loaded = true;
+        }
     }
 
     /**

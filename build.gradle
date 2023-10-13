@@ -1,9 +1,9 @@
 plugins {
-    id 'java'
+    id 'java-library'
 }
 
-group = 'org.ns'
-version = '1.0-SNAPSHOT'
+group = 'org.nse'
+version = '1.0'
 
 repositories {
     mavenCentral()
@@ -25,9 +25,13 @@ test {
 sourceSets {
     main {
         resources {
-            srcDirs "src/main/resources", "build/native/lib"
+            srcDirs "src/main/resources"
         }
     }
+}
+
+processResources {
+    duplicatesStrategy DuplicatesStrategy.EXCLUDE
 }
 
 compileJava {
@@ -44,7 +48,10 @@ tasks.register('compileJNI') {
     doLast {
         exec {
             workingDir 'native'
-            commandLine 'sh', '-c',  'mkdir -p ../build/libs && make && cp out/*.so ../build/libs/'
+            commandLine 'sh', '-c',
+                    'mkdir -p ../build/libs && ' +
+                    'make && ' +
+                    'cp out/*.so ../build/libs/'
         }
     }
 }

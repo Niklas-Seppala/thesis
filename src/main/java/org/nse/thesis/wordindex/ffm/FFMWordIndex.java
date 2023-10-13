@@ -1,8 +1,8 @@
-package org.ns.thesis.wordindex.ffm;
+package org.nse.thesis.wordindex.ffm;
 
 import org.jetbrains.annotations.NotNull;
-import org.ns.thesis.wordindex.WordContextIterator;
-import org.ns.thesis.wordindex.WordIndex;
+import org.nse.thesis.wordindex.WordContextIterator;
+import org.nse.thesis.wordindex.WordIndex;
 
 import java.io.FileNotFoundException;
 import java.lang.foreign.*;

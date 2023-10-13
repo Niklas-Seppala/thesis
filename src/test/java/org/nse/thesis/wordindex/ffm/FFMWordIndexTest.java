@@ -1,8 +1,8 @@
-package org.ns.thesis.wordindex.ffm;
+package org.nse.thesis.wordindex.ffm;
 
 import org.junit.jupiter.api.Test;
-import org.ns.thesis.wordindex.WordContextIterator;
-import org.ns.thesis.wordindex.WordIndex;
+import org.nse.thesis.wordindex.WordContextIterator;
+import org.nse.thesis.wordindex.WordIndex;
 
 import static org.junit.jupiter.api.Assertions.*;
 

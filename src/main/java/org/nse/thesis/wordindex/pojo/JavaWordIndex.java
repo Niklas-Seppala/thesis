@@ -1,8 +1,8 @@
-package org.ns.thesis.wordindex.pojo;
+package org.nse.thesis.wordindex.pojo;
 
 import org.jetbrains.annotations.NotNull;
-import org.ns.thesis.wordindex.WordContextIterator;
-import org.ns.thesis.wordindex.WordIndex;
+import org.nse.thesis.wordindex.WordContextIterator;
+import org.nse.thesis.wordindex.WordIndex;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
