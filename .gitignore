@@ -45,3 +45,6 @@ bin/
 **/*.so
 **/*.test
 **/*.d
+
+**/libs
+**/target

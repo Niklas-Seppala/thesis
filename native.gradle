@@ -1,0 +1,36 @@
+
+def CWD = 'native'
+
+tasks.register('compileJNI') {
+    dependsOn compileJava
+
+    doLast {
+        exec {
+            workingDir CWD
+            commandLine 'sh', '-c',
+                    'mkdir -p ../build/libs && ' +
+                            'make && ' +
+                            'cp out/*.so ../build/libs/'
+        }
+    }
+}
+
+tasks.register('testNative', Exec) {
+    workingDir CWD
+    commandLine 'make'
+    args 'test'
+}
+
+tasks.register('cleanNative', Exec) {
+    workingDir CWD
+    commandLine 'make'
+    args 'clean'
+
+    doLast {
+        exec {
+            workingDir CWD
+            commandLine 'rm'
+            args '-f', 'include/windex/jni/*.h'
+        }
+    }
+}

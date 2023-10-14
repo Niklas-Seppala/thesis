@@ -1,12 +1,31 @@
 plugins {
-    id 'java-library'
+    id 'java'
+    id 'application'
 }
 
+apply from: 'native.gradle'
+apply from: 'benchmarks.gradle'
+
 group = 'org.nse'
-version = '1.0'
 
 repositories {
     mavenCentral()
+}
+
+tasks.register('list') {
+    FileCollection compileClasspath = configurations.compileClasspath
+    dependsOn compileClasspath
+    doLast {
+        println "classpath = ${compileClasspath.collect { File file -> file.name }}"
+    }
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDirs "src/main/resources"
+        }
+    }
 }
 
 dependencies {
@@ -21,11 +40,11 @@ test {
     jvmArgs(['--enable-preview'])
 }
 
-
-sourceSets {
-    main {
-        resources {
-            srcDirs "src/main/resources"
+jar {
+    doLast {
+        copy {
+            from 'build/libs/'
+            into 'benchmarks/libs'
         }
     }
 }
@@ -41,38 +60,10 @@ compileJava {
 tasks.withType(JavaCompile).each {
     it.options.compilerArgs.add('--enable-preview')
 }
-
-tasks.register('compileJNI') {
-    dependsOn compileJava
-
-    doLast {
-        exec {
-            workingDir 'native'
-            commandLine 'sh', '-c',
-                    'mkdir -p ../build/libs && ' +
-                    'make && ' +
-                    'cp out/*.so ../build/libs/'
-        }
-    }
-}
-
-clean.doFirst {
-    delete fileTree('native/include') {
-        include '**/jni_*.h'
-    }
+tasks.withType(JavaExec).configureEach {
+    jvmArgs += "--enable-preview"
 }
 
 clean.dependsOn('cleanNative')
+clean.dependsOn('cleanBenchmarks')
 assemble.dependsOn('compileJNI')
-
-tasks.register('testNative', Exec) {
-    workingDir 'native'
-    commandLine 'make'
-    args 'test'
-}
-
-tasks.register('cleanNative', Exec) {
-    workingDir 'native'
-    commandLine 'make'
-    args 'clean'
-}
