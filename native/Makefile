@@ -18,9 +18,9 @@ DEPFILES=$(patsubst %.c,%.d,$(CFILES))
 
 -include $(DEPFILES)
 
-.PHONY: all clean test_compile test
+.PHONY: all clean test_compile test mkdirs
 
-all: $(OUT)$(BINARY).so
+all: mkdirs $(OUT)$(BINARY).so
 
 $(OUT)$(BINARY).so: $(OBJECTS)
 	$(CC) -shared -fPIC -o $@ $^
@@ -39,3 +39,6 @@ test: test_compile
 
 clean:
 	@rm -rf $(OUT)/* $(OUT)$(BINARY).test $(OBJECTS) test/test.o $(DEPFILES) 2>/dev/null || true
+
+mkdirs:
+	@mkdir -p $(OUT)
