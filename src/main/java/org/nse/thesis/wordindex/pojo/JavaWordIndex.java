@@ -94,8 +94,8 @@ public class JavaWordIndex implements WordIndex {
             if (!this.file.getChannel().isOpen()) {
                 this.file = new RandomAccessFile(this.path, READ_MODE);
             }
-            byte[] buffer = new byte[(ctx.size() << 1) + entry.word.length()];
-            for (Integer pos : entry.filePositions) {
+            byte[] buffer = new byte[(ctx.size() << 1) + entry.getWord().length()];
+            for (Integer pos : entry.getFilePositions()) {
                 int actualReadLength = getActualReadLength(ctx, pos, buffer.length);
 
                 this.file.seek(withContext(pos, ctx));
@@ -219,8 +219,8 @@ public class JavaWordIndex implements WordIndex {
                                        @NotNull WordEntry entry) {
             this.file = file;
             this.ctx = ctx;
-            this.positions = entry.filePositions.iterator();
-            this.buffer = new byte[(ctx.size() << 1) + entry.word.length()];
+            this.positions = entry.getFilePositions().iterator();
+            this.buffer = new byte[(ctx.size() << 1) + entry.getWord().length()];
         }
 
         @Override
@@ -256,53 +256,4 @@ public class JavaWordIndex implements WordIndex {
         }
     }
 
-    /**
-     * Word entry data object, that hold file positions.
-     * Object is comparable by its word.
-     */
-    private static class WordEntry {
-        private final String word;
-        private final List<Integer> filePositions;
-
-        /**
-         * Creates new WordEntry object, with initial file position.
-         *
-         * @param word    Word
-         * @param initial First position
-         */
-        public WordEntry(String word, int initial) {
-            this.word = word;
-            this.filePositions = new ArrayList<>();
-            this.filePositions.add(initial);
-        }
-
-        /**
-         * Add file position to this entry.
-         *
-         * @param filePosition Position to add.
-         */
-        public void addFilePosition(int filePosition) {
-            this.filePositions.add(filePosition);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o)
-                return true;
-            if (o == null || getClass() != o.getClass())
-                return false;
-            WordEntry entry = (WordEntry) o;
-            return Objects.equals(word, entry.word);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(word);
-        }
-
-        @Override
-        public String toString() {
-            return "{\"" + word + "\" " + filePositions + '}';
-        }
-    }
 }

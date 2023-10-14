@@ -3,9 +3,9 @@ def CWD = 'benchmarks'
 def MOD_ACCS = '--enable-native-access=ALL-UNNAMED'
 def PREVIEW = '--enable-preview'
 def MAIN_CLASS = 'org.openjdk.jmh.Main'
+//def MAIN_CLASS = 'org.nse.benchmark.Main'
 def XMX = '-Xmx512M'
 def XMS = '-Xms256M'
-def VERBOSE_GC = '' //'-Xlog:gc*=info:stdout'
 
 /**
  * Cleans generated class files from target dir.
@@ -15,6 +15,14 @@ tasks.register('cleanBenchmarks', Exec) {
     workingDir CWD
     commandLine 'mvn'
     args '--quiet', 'clean'
+
+    doLast {
+        exec {
+            workingDir CWD
+            commandLine 'rm'
+            args '-rf', 'build/libs'
+        }
+    }
 }
 
 /**
@@ -36,10 +44,12 @@ tasks.register('benchmark', Task) {
         exec {
             workingDir CWD
             commandLine 'java'
-            args PREVIEW, MOD_ACCS, XMS, XMX, VERBOSE_GC,
+            args PREVIEW, MOD_ACCS,
+                    XMS, XMX,
                     '-cp', "target/benchmarks.jar:build/libs/*:${runtimeClasspath.asPath}",
                     MAIN_CLASS
         }
         println('\n\n')
     }
 }
+

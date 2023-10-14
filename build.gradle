@@ -44,7 +44,7 @@ jar {
     doLast {
         copy {
             from 'build/libs/'
-            into 'benchmarks/libs'
+            into 'benchmarks/build/libs'
         }
     }
 }
@@ -67,3 +67,4 @@ tasks.withType(JavaExec).configureEach {
 clean.dependsOn('cleanNative')
 clean.dependsOn('cleanBenchmarks')
 assemble.dependsOn('compileJNI')
+benchmark.dependsOn('assemble')
