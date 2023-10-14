@@ -1,6 +1,6 @@
 # thesis-jni
 
-![](https://github.com/Niklas-Seppala/c-utl/actions/workflows/gradle.yml/badge.svg)
+![](https://github.com/Niklas-Seppala/thesis-jni/actions/workflows/gradle.yml/badge.svg)
 
 ## NOTES
 
