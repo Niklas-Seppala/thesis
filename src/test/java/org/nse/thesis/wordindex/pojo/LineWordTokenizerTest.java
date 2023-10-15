@@ -1,4 +1,4 @@
-package org.nse.thesis.wordindex;
+package org.nse.thesis.wordindex.pojo;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

@@ -1,6 +1,8 @@
-package org.nse.thesis.wordindex;
+package org.nse.thesis.wordindex.pojo;
 
 import org.junit.jupiter.api.Test;
+import org.nse.thesis.wordindex.WordContextIterator;
+import org.nse.thesis.wordindex.WordIndex;
 import org.nse.thesis.wordindex.pojo.JavaWordIndex;
 
 import java.io.File;
