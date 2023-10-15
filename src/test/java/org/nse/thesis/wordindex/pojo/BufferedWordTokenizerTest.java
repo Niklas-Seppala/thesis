@@ -2,13 +2,51 @@ package org.nse.thesis.wordindex.pojo;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class BufferedWordTokenizerTest {
+
+    @Test
+    public void testReading() {
+        String text =
+"""
+One two three four five six seven.
+Eight nine ten.
+""";
+        byte[] readBuffer = new byte[16];
+        try (InputStream stream = new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8))) {
+            int nBytes;
+            int totalReadBytes = 0;
+            int truncateOffset = 0;
+            while ((nBytes = stream.read(readBuffer, truncateOffset, readBuffer.length - truncateOffset)) > 0) {
+                final int bufferContentLength = nBytes + truncateOffset;
+                final BufferedWordTokenizer tokenizer = new BufferedWordTokenizer(readBuffer, bufferContentLength);
+                for (WordToken token: tokenizer) {
+                    System.out.println(token);
+                }
+                truncateOffset = tokenizer.getTruncate();
+            }
+            System.out.println("Read in total " + totalReadBytes  + " bytes");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void truncatesWhenWordIsNotFinishedFullBufferRe2ad() {
+        byte[] readBuffer = new byte[256];
+        BufferedWordTokenizer tokenizer = new BufferedWordTokenizer(readBuffer, 0);
+        assertFalse(tokenizer.iterator().hasNext());
+    }
 
     @Test
     public void truncatesWhenWordIsNotFinishedFullBufferRead() {
