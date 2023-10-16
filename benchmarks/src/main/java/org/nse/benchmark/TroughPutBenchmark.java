@@ -1,5 +1,6 @@
 package org.nse.benchmark;
 
+
 import org.nse.thesis.wordindex.WordIndex;
 import org.nse.thesis.wordindex.ffm.FFMWordIndex;
 import org.nse.thesis.wordindex.jna.JNAWordIndex;
@@ -11,6 +12,7 @@ import org.openjdk.jmh.annotations.*;
 import java.util.concurrent.TimeUnit;
 
 public class TroughPutBenchmark {
+    /*
 
     static {
         JNIWordIndexBindings.load("build/libs/wordindex.so");
@@ -20,7 +22,7 @@ public class TroughPutBenchmark {
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    @OutputTimeUnit(TimeUnit.SECONDS)
     @Fork(value = 1, warmups = 1)
     public WordIndex POJOIndexCreation() throws Exception {
         try (WordIndex index = new JavaWordIndex(file)) {
@@ -30,7 +32,17 @@ public class TroughPutBenchmark {
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    @Fork(value = 1, warmups = 1)
+    public WordIndex POJOImprovedIndexCreation() throws Exception {
+        try (WordIndex index = new JavaWordIndex(file)) {
+            return index;
+        }
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
     @Fork(value = 1, warmups = 1)
     public WordIndex JNIIndexCreation() throws Exception {
         try (WordIndex index = new JNIWordIndex(file, 16, 64, 10, true)) {
@@ -40,7 +52,7 @@ public class TroughPutBenchmark {
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    @OutputTimeUnit(TimeUnit.SECONDS)
     @Fork(value = 1, warmups = 1)
     public WordIndex JNAIndexCreation() throws Exception {
         try (WordIndex index = new JNAWordIndex(file, 16, 64, 10, true)) {
@@ -51,11 +63,13 @@ public class TroughPutBenchmark {
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    @OutputTimeUnit(TimeUnit.SECONDS)
     @Fork(value = 1, warmups = 1)
     public WordIndex FFMIndexCreation() throws Exception {
         try (WordIndex index = new FFMWordIndex(file, 16, 64, 10, true)) {
             return index;
         }
     }
+
+     */
 }

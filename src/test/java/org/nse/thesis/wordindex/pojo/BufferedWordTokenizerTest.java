@@ -6,8 +6,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -33,7 +31,7 @@ Eight nine ten.
                 for (WordToken token: tokenizer) {
                     System.out.println(token);
                 }
-                truncateOffset = tokenizer.getTruncate();
+                truncateOffset = tokenizer.getTruncatedBytes();
             }
             System.out.println("Read in total " + totalReadBytes  + " bytes");
         } catch (IOException e) {
@@ -66,8 +64,8 @@ Eight nine ten.
         });
 
         assertTrue(tokenizer.didTruncate());
-        assertEquals(2, tokenizer.getTruncate());
-        String truncated = new String(readBuffer, 0, tokenizer.getTruncate());
+        assertEquals(2, tokenizer.getTruncatedBytes());
+        String truncated = new String(readBuffer, 0, tokenizer.getTruncatedBytes());
         assertEquals(truncated, "fo");
     }
 
@@ -112,7 +110,7 @@ Eight nine ten.
         });
 
         assertFalse(tokenizer.didTruncate());
-        assertEquals(0, tokenizer.getTruncate());
+        assertEquals(0, tokenizer.getTruncatedBytes());
     }
 
     private static void readIntoBuffer(String str, byte[] readBuffer) {

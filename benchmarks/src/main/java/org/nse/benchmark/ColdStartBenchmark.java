@@ -8,6 +8,7 @@ import org.nse.thesis.wordindex.ffm.FFMWordIndex;
 import org.nse.thesis.wordindex.jna.JNAWordIndex;
 import org.nse.thesis.wordindex.jni.JNIWordIndex;
 import org.nse.thesis.wordindex.jni.JNIWordIndexBindings;
+import org.nse.thesis.wordindex.pojo.ImprovedJavaWordIndex;
 import org.nse.thesis.wordindex.pojo.JavaWordIndex;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -21,7 +22,7 @@ public class ColdStartBenchmark {
         JNIWordIndexBindings.load("build/libs/wordindex.so");
     }
 
-    static final String file = "testfiles/bible.txt";
+    static final String file = "testfiles/bible10x.txt";
 
     @Benchmark
     @BenchmarkMode(Mode.SingleShotTime)
@@ -29,6 +30,16 @@ public class ColdStartBenchmark {
     @Fork(value = 1, warmups = 1)
     public WordIndex coldStartPOJOIndexCreation() throws Exception {
         try (WordIndex index = new JavaWordIndex(file)) {
+            return index;
+        }
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.SingleShotTime)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    @Fork(value = 1, warmups = 1)
+    public WordIndex coldStartPOJOImprovedIndexCreation() throws Exception {
+        try (WordIndex index = new ImprovedJavaWordIndex(file)) {
             return index;
         }
     }

@@ -4,9 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.nse.thesis.wordindex.WordContextIterator;
 import org.nse.thesis.wordindex.WordIndex;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -151,9 +149,13 @@ public class ImprovedJavaWordIndex implements WordIndex {
     private void doIndexing() {
         try {
             int position = 0;
-            String line;
-            while ((line = this.file.readLine()) != null) {
-                for (WordToken token : new LineWordTokenizer(line)) {
+            byte[] readBuffer = new byte[4096];
+            int nBytes;
+            int truncatedBytes = 0;
+            while ((nBytes = this.file.read(readBuffer, truncatedBytes, readBuffer.length - truncatedBytes)) > 0) {
+                final int bufferContentLength = nBytes + truncatedBytes;
+                final BufferedWordTokenizer tokenizer = new BufferedWordTokenizer(readBuffer, bufferContentLength);
+                for (WordToken token: tokenizer) {
                     WordEntry existing = this.index.get(token.word());
                     if (existing != null) {
                         existing.addFilePosition(position + token.position());
@@ -162,46 +164,8 @@ public class ImprovedJavaWordIndex implements WordIndex {
                                 position + token.position()));
                     }
                 }
-                position += line.length() + 1; // NOTE: +1 because '\n' got trimmed.
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to index file", e);
-        } finally {
-            try {
-                this.file.close();
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
-            }
-        }
-    }
-
-
-    private boolean isWhitespace(byte b) {
-        return false;
-    }
-
-
-    private String getWord(ByteBuffer buffer) {
-        int start = buffer.position();
-        while (buffer.hasRemaining()) {
-            byte b = buffer.get();
-            if (isWhitespace(b)) {
-                return new String(buffer.array(), start, buffer.position());
-            }
-        }
-        return null;
-    }
-
-    private void doIndexing2() {
-        try {
-            byte[] buffer = new byte[4096];
-            ByteBuffer readBuffer = ByteBuffer.wrap(buffer);
-
-            this.file.read(buffer);
-            String word = null;
-            while ((word = getWord(readBuffer)) != null) {
-                // TODO: Port directly from C
-
+                truncatedBytes = tokenizer.getTruncatedBytes();
+                position += bufferContentLength;
             }
 
         } catch (Exception e) {

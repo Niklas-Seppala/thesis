@@ -52,7 +52,7 @@ public class BufferedWordTokenizer implements Iterable<WordToken> {
         return this.wordTokens.iterator();
     }
 
-    public int getTruncate() {
+    public int getTruncatedBytes() {
         return truncate;
     }
 
