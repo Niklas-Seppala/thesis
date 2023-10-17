@@ -28,7 +28,7 @@ static int god_count = 0;
  * @brief Implementation of opaque WordIndex type.
  */
 struct wordindex {
-    FILE *file;
+    // FILE *file;
     char *fname;
     struct hash_table table;
     size_t word_count;
@@ -38,7 +38,7 @@ struct wordindex {
 // Internal function prototypes
 // ------------------------------------------------------------
 
-static void index_file(WordIndex *index, size_t word_buffer_size);
+static void index_file(WordIndex *index, FILE *file, size_t word_buffer_size);
 static struct hash_entry *alloc_entry(const char *word, size_t len, uint32_t hash,
                                       FilePosition pos);
 static inline bool index_should_resize(size_t size, size_t cap);
@@ -47,11 +47,9 @@ static void do_compaction(WordIndex *index);
 static void resize(WordIndex *index);
 static void redistribute_hash_entries(size_t old_capacity, struct hash_entry **old_table,
                                       size_t new_capacity, struct hash_entry **new_table);
-static struct pos_vec_iter *read_words_with_txt_to_buffer(WordIndex *index,
-                                                          struct pos_vec_iter *pos_iter,
-                                                          char *buffer,
-                                                          size_t buffer_size,
-                                                          uint32_t ctx, size_t word_len);
+static struct index_read_iterator *read_words_with_txt_to_buffer(
+    struct index_read_iterator *read_iterator, char *buffer, size_t buffer_size,
+    uint32_t ctx, size_t word_len);
 static inline uint32_t single_read_size(uint32_t context, size_t word_len);
 
 // ------------------------------------------------------------
@@ -62,17 +60,41 @@ WordIndex *file_word_index_open(const char *filepath, size_t capacity,
                                 size_t word_buffer_size, bool compact) {
     NONNULL(filepath);
     WordIndex *index = malloc(sizeof(WordIndex));
+    if (index == NULL) {
+        return NULL;
+    }
 
-    index->file = fopen(filepath, "r");
-    index->table.table = calloc(capacity, sizeof(struct hash_entry));
+    // TODO what the hell was going on here???
+    // TODO index->table.table = calloc(capacity, sizeof(struct hash_entry));
+    struct hash_entry **table = calloc(capacity, sizeof(uintptr_t));
+    if (table == NULL) {
+        PRINTF_ERROR("%s", ALLOC_ERR);
+        file_word_index_close(index);
+        return NULL;
+    }
+    index->table.table = table;
     index->table.capacity = capacity;
 
     const size_t fpath_len = strlen(filepath) + 1;
-    index->fname = calloc(fpath_len, sizeof(char));
-    strncpy(index->fname, filepath, fpath_len);
+    char *fname = calloc(fpath_len, sizeof(char));
+    if (fname == NULL) {
+        PRINTF_ERROR("%s", ALLOC_ERR);
+        file_word_index_close(index);
+        return NULL;
+    }
+    strncpy(fname, filepath, fpath_len);
+    index->fname = fname;
 
     index->word_count = 0;
-    index_file(index, word_buffer_size);
+    FILE *file = fopen(index->fname, "r");
+    if (file != NULL) {
+        index_file(index, file, word_buffer_size);
+        fclose(file);
+    } else {
+        PRINTF_ERROR_WITH_ERRNO("Could not open a file %s to index", index->fname);
+        file_word_index_close(index);
+        return NULL;
+    }
 
     if (compact) {
         do_compaction(index);
@@ -86,14 +108,14 @@ WordIndex *file_word_index_open(const char *filepath, size_t capacity,
 void *file_word_index_read_with_context_buffered(WordIndex *index, char *buffer,
                                                  size_t buffer_size, const char *word,
                                                  size_t word_len, size_t ctx,
-                                                 void *existing_iter) {
+                                                 void *read_iterator) {
     NONNULL(index);
     NONNULL(buffer);
 
     // Check if caller is continuing from previous position.
-    if (existing_iter != NULL) {
-        return read_words_with_txt_to_buffer(index, existing_iter, buffer, buffer_size,
-                                             ctx, word_len);
+    if (read_iterator != NULL) {
+        return read_words_with_txt_to_buffer(read_iterator, buffer, buffer_size, ctx,
+                                             word_len);
     }
 
     normalize_word(word);
@@ -104,10 +126,16 @@ void *file_word_index_read_with_context_buffered(WordIndex *index, char *buffer,
     // from. See above.
     while (chain != NULL) {
         if (strncmp(chain->word, word, chain->word_len) == EQ) {
-            struct pos_vec_iter *iter = malloc(sizeof(struct pos_vec_iter));
-            iter->index = 0;
-            iter->vec = &chain->pos_vec;
-            return read_words_with_txt_to_buffer(index, iter, buffer, buffer_size, ctx,
+            struct index_read_iterator *new_iterator =
+                malloc(sizeof(struct index_read_iterator));
+            if (new_iterator == NULL) {
+                PRINTF_ERROR("%s", ALLOC_ERR);
+                return NULL;
+            }
+            new_iterator->index = 0;
+            new_iterator->file = fopen(index->fname, "r");
+            new_iterator->vec = &chain->pos_vec;
+            return read_words_with_txt_to_buffer(new_iterator, buffer, buffer_size, ctx,
                                                  word_len);
         }
         chain = chain->next;
@@ -118,27 +146,36 @@ void *file_word_index_read_with_context_buffered(WordIndex *index, char *buffer,
     return NULL;
 }
 
-
-void file_word_index_close_iterator(void *iter) {
+void file_word_index_close_iterator(struct index_read_iterator *iter) {
     if (iter != NULL) {
+        if (iter->file != NULL) {
+            fclose(iter->file);
+        }
         free(iter);
     }
 }
 
 void file_word_index_close(WordIndex *index) {
-    fclose(index->file);
-    free(index->fname);
-    for (size_t i = 0; i < index->table.capacity; i++) {
-        struct hash_entry *entry = index->table.table[i];
-        while (entry != NULL) {
-            struct hash_entry *next = entry->next;
-            free(entry->pos_vec.array);
-            free(entry->word);
-            free(entry);
-            entry = next;
-        }
+    if (index == NULL) {
+        return;
     }
-    free(index->table.table);
+
+    if (index->fname != NULL) {
+        free(index->fname);
+    }
+    if (index->table.table != NULL) {
+        for (size_t i = 0; i < index->table.capacity; i++) {
+            struct hash_entry *entry = index->table.table[i];
+            while (entry != NULL) {
+                struct hash_entry *next = entry->next;
+                free(entry->pos_vec.array);
+                free(entry->word);
+                free(entry);
+                entry = next;
+            }
+        }
+        free(index->table.table);
+    }
     free(index);
 }
 
@@ -197,7 +234,7 @@ static void index_word_at_position(WordIndex *index, char *word, size_t word_len
  * @param word_buffer_size Size of a buffer used in reading
  *                         words from the file.
  */
-static void index_file(WordIndex *index, size_t word_buffer_size) {
+static void index_file(WordIndex *index, FILE *file, size_t word_buffer_size) {
     NONNULL(index);
     char word_buffer[word_buffer_size];
     char *next_read_position_in_buffer = word_buffer;
@@ -205,8 +242,8 @@ static void index_file(WordIndex *index, size_t word_buffer_size) {
 
     const char *WHITESPACE = " \r\n";
     while ((readBytes = fread_unlocked(next_read_position_in_buffer, sizeof(char),
-                                       (word_buffer_size - 1) - truncate_offset,
-                                       index->file)) != 0) {
+                                       (word_buffer_size - 1) - truncate_offset, file)) !=
+           0) {
         // We use stdlib string functions, so let's make sure last string is
         // terminated. This is taken into account, we read in buffsize-1 bytes.
         word_buffer[truncate_offset + readBytes] = '\0';
@@ -256,11 +293,21 @@ static void index_file(WordIndex *index, size_t word_buffer_size) {
 static struct hash_entry *alloc_entry(const char *word, size_t len, uint32_t hash,
                                       FilePosition pos) {
     struct hash_entry *new_entry = malloc(sizeof(struct hash_entry));
+    if (new_entry == NULL) {
+        PRINTF_ERROR("%s", ALLOC_ERR);
+        return NULL;
+    }
     new_entry->hash = hash;
     new_entry->word_len = len;
     pos_vec_init(&new_entry->pos_vec, pos);
     new_entry->next = NULL;
-    new_entry->word = calloc(len + 1, sizeof(char));
+    char *word_buffer = calloc(len + 1, sizeof(char));
+    if (word_buffer == NULL) {
+        PRINTF_ERROR("%s", ALLOC_ERR);
+        free(new_entry);
+        return NULL;
+    }
+    new_entry->word = word_buffer;
     memccpy(new_entry->word, word, sizeof(char), len);
     return new_entry;
 }
@@ -276,7 +323,11 @@ static void resize(WordIndex *index) {
 
     const size_t new_capacity = old_capacity << 1;
     struct hash_entry **new_table = calloc(new_capacity, sizeof(struct hash_entry **));
-
+    if (new_table == NULL) {
+        PRINTF_ERROR("%s", ALLOC_ERR);
+        // Nothing to do.
+        return;
+    }
     redistribute_hash_entries(old_capacity, old_table, new_capacity, new_table);
 
     index->table.table = new_table;
@@ -341,24 +392,22 @@ static void redistribute_hash_entries(size_t old_capacity, struct hash_entry **o
  *
  * @return struct pos_vec_iter * Iterator object to continue reading.
  */
-static struct pos_vec_iter *read_words_with_txt_to_buffer(WordIndex *index,
-                                                          struct pos_vec_iter *pos_iter,
-                                                          char *buffer,
-                                                          size_t buffer_size,
-                                                          uint32_t ctx, size_t word_len) {
+static struct index_read_iterator *read_words_with_txt_to_buffer(
+    struct index_read_iterator *read_iterator, char *buffer, size_t buffer_size,
+    uint32_t ctx, size_t word_len) {
     size_t total_written = 0;
     uint32_t default_read_size = (ctx << 1) + word_len;
 
-    while (pos_vec_iter_has_next(pos_iter)) {
-        const FilePosition fpos = pos_vec_iter_next(pos_iter);
+    while (pos_vec_iter_has_next(read_iterator)) {
+        const FilePosition fpos = pos_vec_iter_next(read_iterator);
         // NOTE: reserve space for complete string with length + enough room for
         // TERM_BUFFER_MARK
         if ((total_written + default_read_size + (sizeof(uint32_t) << 1)) > buffer_size) {
             // No more room. Mark buffer and rollback iterator
             // so we can access same position next time.
             write_u32(buffer + total_written, BUFF_TERM_MARK);
-            pos_iter->index--;
-            return pos_iter;
+            read_iterator->index--;
+            return read_iterator;
         }
 
         const int truncate_beginning = (int)(fpos - ctx);
@@ -373,9 +422,9 @@ static struct pos_vec_iter *read_words_with_txt_to_buffer(WordIndex *index,
 
         // Seek and read word with ctx into buffer, after 4 bytes reserved
         // for string size.
-        fseek(index->file, file_pos_with_context(fpos, ctx), SEEK_SET);
+        fseek(read_iterator->file, file_pos_with_context(fpos, ctx), SEEK_SET);
         size_t read_bytes = fread_unlocked(buffer + total_written + sizeof(uint32_t),
-                                           sizeof(char), read_size, index->file);
+                                           sizeof(char), read_size, read_iterator->file);
         // Write string length before the read bytes.
         write_u32(buffer + total_written, read_bytes);
 
@@ -384,7 +433,7 @@ static struct pos_vec_iter *read_words_with_txt_to_buffer(WordIndex *index,
 
     // All word occurances in file read.
     write_u32(buffer + total_written, BUFF_TERM_MARK);
-    free(pos_iter);
+    file_word_index_close_iterator(read_iterator);
     return NULL;
 }
 
@@ -399,8 +448,13 @@ static void do_compaction(WordIndex *index) {
         if (index->table.table[i] != NULL) {
             struct pos_vec *v = &index->table.table[i]->pos_vec;
             v->capacity = v->length;
-            index->table.table[i]->pos_vec.array =
-                realloc(v->array, v->capacity * sizeof(FilePosition));
+            FilePosition *arr = realloc(v->array, v->capacity * sizeof(FilePosition));
+            if (arr == NULL) {
+                PRINTF_ERROR("%s", ALLOC_ERR);
+                break;
+            } else {
+                index->table.table[i]->pos_vec.array = arr;
+            }
         }
     }
 }

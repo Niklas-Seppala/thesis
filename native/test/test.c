@@ -58,7 +58,9 @@ void query(WordIndex *index) {
 
 int main(void) {
     WordIndex *index = file_word_index_open("test/tfile.txt", 1 << 16, 8192, true);
-    query(index);
-    file_word_index_close(index);
+    if (index != NULL) {
+        query(index);
+        file_word_index_close(index);
+    }
     return 0;
 }

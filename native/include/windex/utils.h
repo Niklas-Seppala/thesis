@@ -1,5 +1,6 @@
 #if !defined(WINDEX_UTILS_H)
 #define WINDEX_UTILS_H
+#include <errno.h>
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -15,13 +16,26 @@
 #endif
 #endif
 
-#define PRINTF_ERROR(format, ...)                   \
-    {                                               \
-        printf(format, __VA_ARGS__);                \
-        printf(                                     \
-            "\tat %s(), %s:%d"                      \
-            "\n",                                   \
-            __FUNCTION_NAME__, __FILE__, __LINE__); \
+extern int errno;
+#define ALLOC_ERR "Failed to allcoate"
+
+#define PRINTF_ERROR(format, ...)                       \
+    {                                                   \
+        fprintf(stderr, format, __VA_ARGS__);           \
+        fprintf(stderr,                                 \
+                "\tat %s(), %s:%d"                      \
+                "\n",                                   \
+                __FUNCTION_NAME__, __FILE__, __LINE__); \
+    }
+
+#define PRINTF_ERROR_WITH_ERRNO(format, ...)                   \
+    {                                                          \
+        fprintf(stderr, format, __VA_ARGS__);                  \
+        fprintf(stderr,                                        \
+                "\n\tat %s(), %s:%d"                           \
+                "\n\t",                                        \
+                __FUNCTION_NAME__, __FILE__, __LINE__);        \
+        fprintf(stderr, "\tcaused by: %s\n", strerror(errno)); \
     }
 
 #ifdef NULL_CHECKS
@@ -50,7 +64,8 @@ struct pos_vec {
     FilePosition *array;
 };
 
-struct pos_vec_iter {
+struct index_read_iterator {
+    FILE *file;
     size_t index;
     struct pos_vec *vec;
 };
@@ -78,7 +93,7 @@ void pos_vec_init(struct pos_vec *vec, FilePosition initial);
  * @return true
  * @return false
  */
-bool pos_vec_iter_has_next(struct pos_vec_iter *iter);
+bool pos_vec_iter_has_next(struct index_read_iterator *iter);
 
 /**
  * @brief
@@ -86,7 +101,7 @@ bool pos_vec_iter_has_next(struct pos_vec_iter *iter);
  * @param iter
  * @return FilePosition
  */
-FilePosition pos_vec_iter_next(struct pos_vec_iter *iter);
+FilePosition pos_vec_iter_next(struct index_read_iterator *iter);
 
 // --------------------------------------------------
 

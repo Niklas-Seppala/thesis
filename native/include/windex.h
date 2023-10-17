@@ -3,9 +3,9 @@
  * @author Niklas Seppälä
  * @brief Public api of word index
  * @date 2023-10-06
- * 
+ *
  * @copyright Copyright (c) 2023
- * 
+ *
  */
 
 #if !defined(WINDEX_H)
@@ -14,6 +14,8 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdlib.h>
+
+#include "windex/utils.h"
 
 #define BUFF_TERM_MARK 0
 
@@ -35,7 +37,7 @@ enum context {
 typedef struct wordindex WordIndex;
 
 /**
- * @brief
+ * @brief Opens a WordIndex over specified file.
  *
  * @param filepath
  * @param capacity
@@ -59,7 +61,7 @@ WordIndex *file_word_index_open(const char *filepath, size_t capacity,
 void *file_word_index_read_with_context_buffered(WordIndex *index, char *read_buffer,
                                                  size_t read_buffer_size,
                                                  const char *word, size_t word_len,
-                                                 size_t context, void *previous_entry);
+                                                 size_t context, void *read_iterator);
 
 /**
  * @brief
@@ -69,10 +71,10 @@ void *file_word_index_read_with_context_buffered(WordIndex *index, char *read_bu
 void file_word_index_close(WordIndex *index);
 
 /**
- * @brief 
- * 
- * @param iter 
+ * @brief
+ *
+ * @param iter
  */
-void file_word_index_close_iterator(void *iter);
+void file_word_index_close_iterator(struct index_read_iterator *iter);
 
 #endif  // WINDEX_H

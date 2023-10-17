@@ -24,11 +24,11 @@ void pos_vec_init(struct pos_vec *vec, FilePosition initial) {
     vec->array[vec->length++] = initial;
 }
 
-bool pos_vec_iter_has_next(struct pos_vec_iter *iter) {
+bool pos_vec_iter_has_next(struct index_read_iterator *iter) {
     return iter->index < iter->vec->length;
 }
 
-FilePosition pos_vec_iter_next(struct pos_vec_iter *iter) {
+FilePosition pos_vec_iter_next(struct index_read_iterator *iter) {
     return iter->vec->array[iter->index++];
 }
 
