@@ -28,9 +28,9 @@ class JavaWordIndexTest {
     }
 
     @Test
-    void testIterateWords() {
+    void testIterateWords() throws InterruptedException {
+        Thread.sleep(1000);
         try (WordIndex index = new JavaWordIndex("src/test/resources/bible.txt")) {
-            dumpToFile(index);
 
             try (WordContextIterator iterator = index.iterateWords(searchWord,
                     WordIndex.ContextBytes.SMALL_CONTEXT)) {
@@ -39,23 +39,6 @@ class JavaWordIndexTest {
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private static void dumpToFile(WordIndex index) throws IOException {
-        File f = new File("build/results-java");
-        try (var writer = new FileWriter(f)) {
-            index.iterateWords("god",
-                            WordIndex.ContextBytes.SMALL_CONTEXT).stream()
-                    .map(str -> str.replaceAll("\n", " "))
-                    .forEach(str -> {
-                        try {
-                            writer.write(str);
-                            writer.write("\n");
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
         }
     }
 }

@@ -7,6 +7,8 @@ import org.nse.thesis.wordindex.WordIndex;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -15,7 +17,6 @@ public class ImprovedJavaWordIndex implements WordIndex {
     private static final String READ_MODE = "r";
     private final String path;
     private final Map<@NotNull String, @NotNull WordEntry> index = new HashMap<>();
-    private RandomAccessFile file;
 
     /**
      * Creates Word index over specified text file.
@@ -24,7 +25,9 @@ public class ImprovedJavaWordIndex implements WordIndex {
      * @throws FileNotFoundException When file path is invalid
      */
     public ImprovedJavaWordIndex(@NotNull String path) throws FileNotFoundException {
-        this.file = new RandomAccessFile(path, READ_MODE);
+        if (Files.notExists(Path.of(path))) {
+            throw new FileNotFoundException(path);
+        }
         this.path = path;
         this.doIndexing();
     }
@@ -84,18 +87,15 @@ public class ImprovedJavaWordIndex implements WordIndex {
         }
 
         List<String> results = new ArrayList<>();
-        try {
-            if (!this.file.getChannel().isOpen()) {
-                this.file = new RandomAccessFile(this.path, READ_MODE);
-            }
+        try (final RandomAccessFile file = new RandomAccessFile(this.path, READ_MODE)){
             byte[] buffer = new byte[(ctx.size() << 1) + entry.getWord().length()];
             for (Integer pos : entry.getFilePositions()) {
                 int actualReadLength = getActualReadLength(ctx, pos, buffer.length);
 
-                this.file.seek(withContext(pos, ctx));
-                int readBytes = this.file.read(buffer);
+                file.seek(withContext(pos, ctx));
+                final int readBytes = file.read(buffer);
 
-                String str = new String(buffer, 0, Math.min(readBytes, actualReadLength),
+                final String str = new String(buffer, 0, Math.min(readBytes, actualReadLength),
                         StandardCharsets.UTF_8);
                 results.add(str);
             }
@@ -130,11 +130,7 @@ public class ImprovedJavaWordIndex implements WordIndex {
 
     @Override
     public void close() {
-        try {
-            this.file.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        // NOP
     }
 
     @Override
@@ -147,12 +143,12 @@ public class ImprovedJavaWordIndex implements WordIndex {
      * to words.
      */
     private void doIndexing() {
-        try {
+        try (final RandomAccessFile file = new RandomAccessFile(path, READ_MODE)){
+            final byte[] readBuffer = new byte[4096];
             int position = 0;
-            byte[] readBuffer = new byte[4096];
             int nBytes;
             int truncatedBytes = 0;
-            while ((nBytes = this.file.read(readBuffer, truncatedBytes, readBuffer.length - truncatedBytes)) > 0) {
+            while ((nBytes = file.read(readBuffer, truncatedBytes, readBuffer.length - truncatedBytes)) > 0) {
                 final int bufferContentLength = nBytes + truncatedBytes;
                 final BufferedWordTokenizer tokenizer = new BufferedWordTokenizer(readBuffer, bufferContentLength);
                 for (WordToken token: tokenizer) {
@@ -165,17 +161,10 @@ public class ImprovedJavaWordIndex implements WordIndex {
                     }
                 }
                 truncatedBytes = tokenizer.getTruncatedBytes();
-                position += bufferContentLength;
+                position += nBytes;
             }
-
         } catch (Exception e) {
             throw new RuntimeException("Failed to index file", e);
-        } finally {
-            try {
-                this.file.close();
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
-            }
         }
     }
 
@@ -215,7 +204,7 @@ public class ImprovedJavaWordIndex implements WordIndex {
          * @param ctx   Search context size in bytes.
          * @param entry Word file Positions to iterate over.
          */
-        public JavaWordContextIterator(@NotNull RandomAccessFile file, @NotNull WordIndex.ContextBytes ctx,
+        protected JavaWordContextIterator(@NotNull RandomAccessFile file, @NotNull WordIndex.ContextBytes ctx,
                                        @NotNull WordEntry entry) {
             this.file = file;
             this.ctx = ctx;

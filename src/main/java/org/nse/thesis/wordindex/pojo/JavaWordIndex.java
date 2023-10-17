@@ -8,6 +8,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -21,7 +23,6 @@ public class JavaWordIndex implements WordIndex {
     private static final String READ_MODE = "r";
     private final String path;
     private final Map<@NotNull String, @NotNull WordEntry> index = new HashMap<>();
-    private RandomAccessFile file;
 
     /**
      * Creates Word index over specified text file.
@@ -30,7 +31,9 @@ public class JavaWordIndex implements WordIndex {
      * @throws FileNotFoundException When file path is invalid
      */
     public JavaWordIndex(@NotNull String path) throws FileNotFoundException {
-        this.file = new RandomAccessFile(path, READ_MODE);
+        if (Files.notExists(Path.of(path))) {
+            throw new FileNotFoundException(path);
+        }
         this.path = path;
         this.doIndexing();
     }
@@ -90,16 +93,13 @@ public class JavaWordIndex implements WordIndex {
         }
 
         List<String> results = new ArrayList<>();
-        try {
-            if (!this.file.getChannel().isOpen()) {
-                this.file = new RandomAccessFile(this.path, READ_MODE);
-            }
+        try (final RandomAccessFile file = new RandomAccessFile(this.path, READ_MODE)) {
             byte[] buffer = new byte[(ctx.size() << 1) + entry.getWord().length()];
             for (Integer pos : entry.getFilePositions()) {
                 int actualReadLength = getActualReadLength(ctx, pos, buffer.length);
 
-                this.file.seek(withContext(pos, ctx));
-                int readBytes = this.file.read(buffer);
+                file.seek(withContext(pos, ctx));
+                int readBytes = file.read(buffer);
 
                 String str = new String(buffer, 0, Math.min(readBytes, actualReadLength),
                         StandardCharsets.UTF_8);
@@ -136,11 +136,7 @@ public class JavaWordIndex implements WordIndex {
 
     @Override
     public void close() {
-        try {
-            this.file.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        // NOP
     }
 
     @Override
@@ -153,10 +149,10 @@ public class JavaWordIndex implements WordIndex {
      * to words.
      */
     private void doIndexing() {
-        try {
+        try (final RandomAccessFile file = new RandomAccessFile(this.path, READ_MODE)) {
             int position = 0;
             String line;
-            while ((line = this.file.readLine()) != null) {
+            while ((line = file.readLine()) != null) {
                 for (WordToken token : new LineWordTokenizer(line)) {
                     WordEntry existing = this.index.get(token.word());
                     if (existing != null) {
@@ -170,12 +166,6 @@ public class JavaWordIndex implements WordIndex {
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to index file", e);
-        } finally {
-            try {
-                this.file.close();
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
-            }
         }
     }
 
@@ -184,7 +174,7 @@ public class JavaWordIndex implements WordIndex {
      * When there is not enough leading or trailing bytes to satisfy this case,
      * we read what we have.
      *
-     * @param ctx        Context size in bytes
+     * @param ctx        Context size in bytesss
      * @param pos        file position
      * @param bufferSize Size of the buffer (basic case)
      * @return How many bytes we should actually read.
@@ -255,5 +245,4 @@ public class JavaWordIndex implements WordIndex {
                     this, Spliterator.ORDERED), false);
         }
     }
-
 }
