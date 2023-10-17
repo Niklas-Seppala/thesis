@@ -1,4 +1,4 @@
-#include "windex/utils.h"
+#include "wordindex/utils.h"
 
 #include <ctype.h>
 

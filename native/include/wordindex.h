@@ -15,7 +15,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include "windex/utils.h"
+#include "wordindex/utils.h"
 
 #define BUFF_TERM_MARK 0
 

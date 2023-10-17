@@ -7,7 +7,7 @@
  * @copyright Copyright (c) 2023
  */
 
-#include "windex.h"
+#include "wordindex.h"
 
 #include <ctype.h>
 #include <inttypes.h>
@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "windex/utils.h"
+#include "wordindex/utils.h"
 
 #define EQ 0
 #define RESIZE_TRESHOLD 0.75f

@@ -7,7 +7,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "windex.h"
+#include "wordindex.h"
 
 #define BUFFER_SIZE 4096
 

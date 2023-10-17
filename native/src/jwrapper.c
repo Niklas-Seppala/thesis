@@ -1,8 +1,8 @@
 #include <string.h>
 
-#include "windex.h"
-#include "windex/utils.h"
-#include "windex/jni/org_nse_thesis_wordindex_jni_JNIWordIndexBindings.h"
+#include "wordindex.h"
+#include "wordindex/jni/org_nse_thesis_wordindex_jni_JNIWordIndexBindings.h"
+#include "wordindex/utils.h"
 
 /**
  * @brief
@@ -14,7 +14,8 @@
  * @param compact
  * @return JNIEXPORT
  */
-JNIEXPORT jlong JNICALL Java_org_nse_thesis_wordindex_jni_JNIWordIndexBindings_wordIndexOpen(
+JNIEXPORT jlong JNICALL
+Java_org_nse_thesis_wordindex_jni_JNIWordIndexBindings_wordIndexOpen(
     JNIEnv *env, jclass class, jstring filepath, jlong capacity, jlong bufferSize,
     jboolean compact) {
     NOT_USED(class);
@@ -36,8 +37,10 @@ JNIEXPORT jlong JNICALL Java_org_nse_thesis_wordindex_jni_JNIWordIndexBindings_w
  * @param handle
  * @return JNIEXPORT
  */
-JNIEXPORT void JNICALL Java_org_nse_thesis_wordindex_jni_JNIWordIndexBindings_wordIndexClose(
-    JNIEnv *env, jclass class, jlong handle) {
+JNIEXPORT void JNICALL
+Java_org_nse_thesis_wordindex_jni_JNIWordIndexBindings_wordIndexClose(JNIEnv *env,
+                                                                      jclass class,
+                                                                      jlong handle) {
     NOT_USED(class);
     NOT_USED(env);
 
@@ -90,9 +93,8 @@ Java_org_nse_thesis_wordindex_jni_JNIWordIndexBindings_wordIndexReadWithContextB
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_org_nse_thesis_wordindex_jni_JNIWordIndexBindings_wordIndexCloseIterator(JNIEnv *env,
-                                                                    jclass class,
-                                                                    jlong iterator) {
+Java_org_nse_thesis_wordindex_jni_JNIWordIndexBindings_wordIndexCloseIterator(
+    JNIEnv *env, jclass class, jlong iterator) {
     NOT_USED(env);
     NOT_USED(class);
     file_word_index_close_iterator((void *)iterator);
