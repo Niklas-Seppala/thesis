@@ -1,3 +1,9 @@
+/**
+ * @file wordindex/utils.h
+ * @author Nikals Seppälä
+ * @copyright Copyright (c) 2023
+ */
+
 #if !defined(WINDEX_UTILS_H)
 #define WINDEX_UTILS_H
 #include <errno.h>

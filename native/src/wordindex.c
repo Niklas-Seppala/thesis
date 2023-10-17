@@ -1,9 +1,6 @@
 /**
- * @file windex.c
+ * @file wordindex.c
  * @author Niklas Seppälä
- * @brief Implementation of word index
- * @date 2023-10-06
- *
  * @copyright Copyright (c) 2023
  */
 

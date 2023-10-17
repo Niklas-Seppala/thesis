@@ -1,11 +1,7 @@
 /**
- * @file windex.h
+ * @file wordindex.h
  * @author Niklas Seppälä
- * @brief Public api of word index
- * @date 2023-10-06
- *
  * @copyright Copyright (c) 2023
- *
  */
 
 #if !defined(WINDEX_H)
