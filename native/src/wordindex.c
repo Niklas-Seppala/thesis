@@ -233,6 +233,7 @@ static bool index_word_at_position(WordIndex *index, char *word, size_t word_len
                     // Failed to allocate new entry.
                     return false;
                 } else {
+                    entry->next = new_entry;
                     break;
                 }
             }

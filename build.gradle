@@ -54,7 +54,7 @@ processResources {
 }
 
 compileJava {
-    options.compilerArgs += ["-h", file("native/include/windex/jni")]
+    options.compilerArgs += ["-h", file("native/include/wordindex/jni")]
 }
 
 tasks.withType(JavaCompile).each {

@@ -31,7 +31,7 @@ tasks.register('cleanNative', Exec) {
         exec {
             workingDir CWD
             commandLine 'rm'
-            args '-f', 'include/windex/jni/*.h'
+            args '-f', 'include/wordindex/jni/*.h'
         }
     }
 }
