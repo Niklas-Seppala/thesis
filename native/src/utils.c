@@ -9,19 +9,32 @@ void write_u32(char *bytes, uint32_t value) {
     *bytes++ = (value >> 24) & 0xff;
 }
 
-void pos_vec_add(struct pos_vec *vec, FilePosition position) {
+bool pos_vec_add(struct pos_vec *vec, FilePosition position) {
     if (vec->length == vec->capacity) {
         vec->capacity <<= 1;
-        vec->array = realloc(vec->array, sizeof(FilePosition) * vec->capacity);
+        FilePosition *new_array =
+            realloc(vec->array, sizeof(FilePosition) * vec->capacity);
+        if (new_array == NULL) {
+            PRINTF_ERROR("%s", ALLOC_ERR);
+            return false;
+        }
+        vec->array = new_array;
     }
     vec->array[vec->length++] = position;
+    return true;
 }
 
-void pos_vec_init(struct pos_vec *vec, FilePosition initial) {
+bool pos_vec_init(struct pos_vec *vec, FilePosition initial) {
     vec->length = 0;
     vec->capacity = VEC_DEF_CAP;
-    vec->array = malloc(sizeof(FilePosition) * VEC_DEF_CAP);
+    FilePosition *array = malloc(sizeof(FilePosition) * VEC_DEF_CAP);
+    if (array == NULL) {
+        PRINTF_ERROR("%s", ALLOC_ERR);
+        return false;
+    }
+    vec->array = array;
     vec->array[vec->length++] = initial;
+    return true;
 }
 
 bool pos_vec_iter_has_next(struct index_read_iterator *iter) {

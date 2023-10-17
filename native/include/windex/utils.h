@@ -58,53 +58,74 @@ typedef size_t FilePosition;
 
 // --------------------------------------------------
 
+/**
+ * @brief Dynamic vector that can hold word FilePositions.
+ *        Automatically resizes when full, by doubling current
+ *        capacity.
+ */
 struct pos_vec {
-    size_t capacity;
-    size_t length;
-    FilePosition *array;
+    size_t capacity;      // Current vector capacity.
+    size_t length;        // Current length (number of entries held).
+    FilePosition *array;  // Underylying array.
 };
 
+/**
+ * @brief Iterator used when reading from the index in buffered
+ *        manner.
+ */
 struct index_read_iterator {
-    FILE *file;
-    size_t index;
-    struct pos_vec *vec;
+    FILE *file;           // Open file to read from using word positions.
+    size_t index;         // Next position index.
+    struct pos_vec *vec;  // Vector that contains word FilePositions.
 };
 
 /**
- * @brief
+ * @brief Adds FilePosition to the vector. If vector is full it
+ *        will resize by doubling it's capacity.
  *
- * @param vec
- * @param position
+ * @param vec Vector to add position to.
+ * @param position Position to add.
+ *
+ * @return true  - When action was completed succesfully.
+ * @return false - When action failed.
  */
-void pos_vec_add(struct pos_vec *vec, FilePosition position);
+bool pos_vec_add(struct pos_vec *vec, FilePosition position);
 
 /**
- * @brief
+ * @brief Allocates vector that holds FilePositions
+ *        with specified capacity.
  *
- * @param vec
- * @param initial
+ * @param vec Vector to initialize.
+ * @param initial Initial capacity of the vector.
+ *
+ * @return true  - When action was completed succesfully.
+ * @return false - When action failed.
  */
-void pos_vec_init(struct pos_vec *vec, FilePosition initial);
+bool pos_vec_init(struct pos_vec *vec, FilePosition initial);
 
 /**
- * @brief
+ * @brief Check if iterator has more FilePositions to read.
  *
- * @param iter
- * @return true
- * @return false
+ * @param iter Iterator object to check.
+ *
+ * @return true - When iterator has more items to read.
+ * @return false - When iterator is exhausted.
  */
 bool pos_vec_iter_has_next(struct index_read_iterator *iter);
 
 /**
- * @brief
+ * @brief Gets the next word FilePosition from iterator.
  *
- * @param iter
- * @return FilePosition
+ * @param iter Iterator to read from.
+ * @return FilePosition word FilePosition read by the iterator.
  */
 FilePosition pos_vec_iter_next(struct index_read_iterator *iter);
 
 // --------------------------------------------------
 
+/**
+ * @brief Entry stored in hashmap.
+ */
 struct hash_entry {
     char *word;
     size_t word_len;
@@ -113,6 +134,9 @@ struct hash_entry {
     struct hash_entry *next;
 };
 
+/**
+ * @brief Hashtable
+ */
 struct hash_table {
     size_t capacity;
     struct hash_entry **table;

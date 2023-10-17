@@ -38,7 +38,7 @@ struct wordindex {
 // Internal function prototypes
 // ------------------------------------------------------------
 
-static void index_file(WordIndex *index, FILE *file, size_t word_buffer_size);
+static bool index_file(WordIndex *index, FILE *file, size_t word_buffer_size);
 static struct hash_entry *alloc_entry(const char *word, size_t len, uint32_t hash,
                                       FilePosition pos);
 static inline bool index_should_resize(size_t size, size_t cap);
@@ -88,8 +88,12 @@ WordIndex *file_word_index_open(const char *filepath, size_t capacity,
     index->word_count = 0;
     FILE *file = fopen(index->fname, "r");
     if (file != NULL) {
-        index_file(index, file, word_buffer_size);
+        bool success = index_file(index, file, word_buffer_size);
         fclose(file);
+        if (!success) {
+            file_word_index_close(index);
+            return NULL;
+        }
     } else {
         PRINTF_ERROR_WITH_ERRNO("Could not open a file %s to index", index->fname);
         file_word_index_close(index);
@@ -188,8 +192,11 @@ void file_word_index_close(WordIndex *index) {
  * @param word word
  * @param word_len word length
  * @param pos file position
+ *
+ * @return true  - When word was added to index.
+ * @return false - When adding failed.
  */
-static void index_word_at_position(WordIndex *index, char *word, size_t word_len,
+static bool index_word_at_position(WordIndex *index, char *word, size_t word_len,
                                    FilePosition pos) {
     NONNULL(index);
     NONNULL(word);
@@ -205,24 +212,39 @@ static void index_word_at_position(WordIndex *index, char *word, size_t word_len
         // First entry for this bucket.
         index->word_count++;
         *bucket = alloc_entry(word, word_len, hash_value, pos);
+        if (bucket == NULL) {
+            // Failed to allocate bucket.
+            return false;
+        }
     } else {
         struct hash_entry *entry = *bucket;
         do {
             if (strncmp(entry->word, word, word_len) == EQ) {
                 // Found existing entry of word.
-                pos_vec_add(&entry->pos_vec, pos);
-                break;
+                if (!pos_vec_add(&entry->pos_vec, pos)) {
+                    // Failed to add position to existing entry.
+                    return false;
+                } else {
+                    break;
+                }
             } else if (entry->next == NULL) {
                 // Hash collision, add word new entry to the bucket.
                 index->word_count++;
-                entry->next = alloc_entry(word, word_len, hash_value, pos);
-                break;
+                struct hash_entry *new_entry =
+                    alloc_entry(word, word_len, hash_value, pos);
+                if (new_entry == NULL) {
+                    // Failed to allocate new entry.
+                    return false;
+                } else {
+                    break;
+                }
             }
         } while ((entry = entry->next));
     }
     if (index_should_resize(index->word_count, capacity)) {
         resize(index);
     }
+    return true;
 }
 
 /**
@@ -231,10 +253,14 @@ static void index_word_at_position(WordIndex *index, char *word, size_t word_len
  * positions to index.
  *
  * @param index Index object.
+ * @param file Open file to read from.
  * @param word_buffer_size Size of a buffer used in reading
  *                         words from the file.
+ *
+ * @return true - When indexing was succesful.
+ * @return false When indexing failed.
  */
-static void index_file(WordIndex *index, FILE *file, size_t word_buffer_size) {
+static bool index_file(WordIndex *index, FILE *file, size_t word_buffer_size) {
     NONNULL(index);
     char word_buffer[word_buffer_size];
     char *next_read_position_in_buffer = word_buffer;
@@ -264,7 +290,11 @@ static void index_file(WordIndex *index, FILE *file, size_t word_buffer_size) {
             // Store the word and it's file position
             FilePosition pos = position_offset - truncate_offset + (str - word_buffer);
             size_t new_len = normalize_word(str);
-            index_word_at_position(index, str, new_len, pos);
+            bool success = index_word_at_position(index, str, new_len, pos);
+            if (!success) {
+                PRINTF_ERROR("Failed to add word %s to the index", str);
+                return false;
+            }
 
             // Get next token.
             str = strtok(NULL, WHITESPACE);
@@ -278,6 +308,7 @@ static void index_file(WordIndex *index, FILE *file, size_t word_buffer_size) {
         next_read_position_in_buffer = word_buffer + truncate_offset;
         position_offset += readBytes;
     }
+    return true;
 }
 
 /**
@@ -299,7 +330,11 @@ static struct hash_entry *alloc_entry(const char *word, size_t len, uint32_t has
     }
     new_entry->hash = hash;
     new_entry->word_len = len;
-    pos_vec_init(&new_entry->pos_vec, pos);
+    if (!pos_vec_init(&new_entry->pos_vec, pos)) {
+        // Failed to initialize entry.
+        free(new_entry);
+        return NULL;
+    }
     new_entry->next = NULL;
     char *word_buffer = calloc(len + 1, sizeof(char));
     if (word_buffer == NULL) {
