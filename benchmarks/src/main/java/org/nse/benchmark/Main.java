@@ -11,6 +11,7 @@ public class Main {
         Options options = new OptionsBuilder()
                 .include(ColdStartBenchmark.class.getSimpleName())
                 .include(TroughPutBenchmark.class.getSimpleName())
+                .include(DirectoryWordIndexBenchmark.class.getSimpleName())
                 .build();
 
         new Runner(options).run();

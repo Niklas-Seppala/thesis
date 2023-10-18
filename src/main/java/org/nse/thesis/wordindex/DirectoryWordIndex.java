@@ -17,7 +17,7 @@ public class DirectoryWordIndex implements AutoCloseable {
         if (Files.notExists(path)) {
             throw new FileNotFoundException(dirPath);
         }
-        if (Files.isDirectory(path)) {
+        if (!Files.isDirectory(path)) {
             throw new FileNotFoundException(
                     String.format("%s is not a directory", dirPath));
         }
