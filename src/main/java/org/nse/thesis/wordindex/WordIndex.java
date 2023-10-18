@@ -12,6 +12,12 @@ import java.util.Collection;
  */
 public interface WordIndex extends AutoCloseable {
 
+    @FunctionalInterface
+    interface IndexProvider {
+        WordIndex indexFrom(String path) throws FileNotFoundException;
+    }
+
+
     /**
      * 4 byte mark on query buffer that indicates there is
      * no more bytes to read.

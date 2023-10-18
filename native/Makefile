@@ -29,18 +29,32 @@ CFLAGS=${CC_WARN} $(OPT) -std=gnu11 ${DEBUG} -DVEC_DEF_CAP=8 ${RT_NULL_CHECKS} $
 
 all: mkdirs $(OUT)$(BINARY).so
 
+##############################################
+#   Create shared library from object files
+##############################################
 $(OUT)$(BINARY).so: $(OBJECTS)
 	$(CC) -shared -fPIC -o $@ $^
 
+##############################################
+#   Create object files from src dir
+##############################################
 %.o:%.c
 	$(CC) $(CFLAGS) -c -fPIC -o $@ $< $(ASAN) $(UBSAN)
 
+##############################################
+#   Create object files from src dir
+##############################################
 $(OUT)$(BINARY).test: $(OBJECTS) test/test.o
 	$(CC) -o $@ $^ $(ASAN) $(UBSAN)
 
+##############################################
+#   Create test binary
+##############################################
 test_compile: $(OUT)$(BINARY).test
 	
-
+##############################################
+#   Compile test src
+##############################################
 test: test_compile
 	@./$(OUT)${BINARY}.test ${RUN_ARGS}
 
