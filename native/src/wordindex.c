@@ -19,8 +19,6 @@
 #define EQ 0
 #define RESIZE_TRESHOLD 0.75f
 
-static int god_count = 0;
-
 /**
  * @brief Implementation of opaque WordIndex type.
  */
@@ -199,10 +197,6 @@ static bool index_word_at_position(WordIndex *index, char *word, size_t word_len
     NONNULL(word);
     uint32_t hash_value = hash(word);
 
-    if (strcmp(word, "god") == EQ) {
-        god_count++;
-    }
-
     const size_t capacity = index->table.capacity;
     struct hash_entry **bucket = index->table.table + (hash_value % capacity);
     if (*bucket == NULL) {
@@ -272,31 +266,33 @@ static bool index_file(WordIndex *index, FILE *file, size_t word_buffer_size) {
         // terminated. This is taken into account, we read in buffsize-1 bytes.
         word_buffer[truncate_offset + readBytes] = '\0';
 
-        char *str = strtok(word_buffer, WHITESPACE);
-        while (str != NULL) {
-            const size_t str_len = strlen(str);
+        char *save_ptr;
+        char *word_token = strtok_r(word_buffer, WHITESPACE, &save_ptr);
+        while (word_token != NULL) {
+            const size_t token_len = strlen(word_token);
 
             // Check if we need to move remaining word to start
             // of buffer, and continue reading to complete the
             // word.
-            if (str + str_len == word_buffer + (word_buffer_size - 1)) {
-                memmove(word_buffer, str, str_len);
-                truncate_offset = str_len;
+            if (word_token + token_len == word_buffer + (word_buffer_size - 1)) {
+                memmove(word_buffer, word_token, token_len);
+                truncate_offset = token_len;
                 break;
             }
 
             // Store the word and it's file position
-            FilePosition pos = position_offset - truncate_offset + (str - word_buffer);
-            size_t new_len = normalize_word(str);
-            bool success = index_word_at_position(index, str, new_len, pos);
+            FilePosition pos =
+                position_offset - truncate_offset + (word_token - word_buffer);
+            size_t new_len = normalize_word(word_token);
+            bool success = index_word_at_position(index, word_token, new_len, pos);
             if (!success) {
-                PRINTF_ERROR("Failed to add word %s to the index", str);
+                PRINTF_ERROR("Failed to add word %s to the index", word_token);
                 return false;
             }
 
             // Get next token.
-            str = strtok(NULL, WHITESPACE);
-            if (str == NULL) {
+            word_token = strtok_r(NULL, WHITESPACE, &save_ptr);
+            if (word_token == NULL) {
                 // Reading buffer is done. Didn't truncate, so reset to zero.
                 truncate_offset = 0;
             }
