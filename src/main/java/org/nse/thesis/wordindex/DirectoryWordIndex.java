@@ -1,17 +1,21 @@
 package org.nse.thesis.wordindex;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class DirectoryWordIndex implements AutoCloseable {
-
     private final Map<String, WordIndex> indexMap;
+    private final String dirPath;
 
-    public DirectoryWordIndex(String dirPath, WordIndex.IndexProvider indexProvider) throws FileNotFoundException {
-
+    public DirectoryWordIndex(@NotNull String dirPath, @NotNull WordIndex.IndexProvider indexProvider)
+            throws FileNotFoundException {
         final Path path = Path.of(dirPath);
 
         if (Files.notExists(path)) {
@@ -21,8 +25,8 @@ public class DirectoryWordIndex implements AutoCloseable {
             throw new FileNotFoundException(
                     String.format("%s is not a directory", dirPath));
         }
+        this.dirPath = path.toAbsolutePath().toString();
         File dir = path.toFile();
-        assert dir.canRead();
 
         this.indexMap = new HashMap<>();
         File[] files = dir.listFiles();
@@ -31,11 +35,12 @@ public class DirectoryWordIndex implements AutoCloseable {
         }
     }
 
-    private void indexFilesInDirectory(List<File> files,
-                                       WordIndex.IndexProvider indexProvider) {
+    private void indexFilesInDirectory(@NotNull List<File> files,
+                                       @NotNull WordIndex.IndexProvider indexProvider) {
         if (files.isEmpty()) {
             return;
         }
+
         for (File file : files) {
             String fileName = file.getName();
             if (!indexMap.containsKey(fileName)) {
@@ -50,26 +55,28 @@ public class DirectoryWordIndex implements AutoCloseable {
         }
     }
 
-    public Collection<String> getWordsWithContextInFile(String path, String word,
-                                                        WordIndex.ContextBytes ctx) {
+    @NotNull
+    public Collection<String> getWordsWithContextInFile(@NotNull String path, @NotNull String word,
+                                                        @NotNull WordIndex.ContextBytes ctx) {
         String fileName = Path.of(path).getFileName().toString();
         WordIndex index = this.indexMap.get(fileName);
         if (index != null) {
             return index.getWords(word, ctx);
         } else {
-            return null;
+            return Collections.emptyList();
         }
     }
 
-    public Iterator<String> iterateWordsWithContextInFile(String path, String word,
-                                                          WordIndex.ContextBytes ctx)
+    @NotNull
+    public Iterator<String> iterateWordsWithContextInFile(@NotNull String path, @NotNull String word,
+                                                          @NotNull WordIndex.ContextBytes ctx)
             throws FileNotFoundException {
         String fileName = Path.of(path).getFileName().toString();
         WordIndex index = this.indexMap.get(fileName);
         if (index != null) {
             return index.iterateWords(word, ctx);
         } else {
-            return null;
+            return Collections.emptyIterator();
         }
     }
 
@@ -82,5 +89,13 @@ public class DirectoryWordIndex implements AutoCloseable {
                 e.printStackTrace();
             }
         });
+    }
+
+    @NotNull
+    public List<File> files() {
+        return this.indexMap.keySet().stream()
+                .map(fileName ->
+                        new File(this.dirPath + File.separator + fileName))
+                .collect(Collectors.toList());
     }
 }

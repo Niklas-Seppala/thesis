@@ -1,65 +1,35 @@
 package org.nse.thesis.wordindex;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.nse.thesis.wordindex.ffm.FFMWordIndex;
-import org.nse.thesis.wordindex.jna.JNAWordIndex;
-import org.nse.thesis.wordindex.jni.JNIWordIndex;
 import org.nse.thesis.wordindex.pojo.ImprovedJavaWordIndex;
-import org.nse.thesis.wordindex.pojo.JavaWordIndex;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.HashMap;
+import java.util.Map;
 
 class DirectoryWordIndexTest {
+    private static final Map<String, Integer> wordToCountMap = new HashMap<>();
+    static {
+        wordToCountMap.put("power", 58);
+        wordToCountMap.put("man", 118);
+        wordToCountMap.put("physical", 60);
+        wordToCountMap.put("bound", 58);
+    }
 
     @Test
-    void asd() throws FileNotFoundException {
-        final String DIR = "src/test/resources/";
-        final String WORD = "god";
-        final String FILE = "bible.txt";
+    void test() throws FileNotFoundException {
+        try (DirectoryWordIndex index = new DirectoryWordIndex("src/test/resources/docs", ImprovedJavaWordIndex::new)) {
+            for (File file : index.files()) {
+                wordToCountMap.forEach((key, value) -> assertWordCount(index, file, key, value));
+            }
+        }
+    }
 
-        // Open indexes
-
-        /*
-        DirectoryWordIndex index = new DirectoryWordIndex(DIR, JavaWordIndex::new);
-        */
-
-        DirectoryWordIndex indexerImproved = new DirectoryWordIndex(DIR,
-                ImprovedJavaWordIndex::new);
-
-        /*
-        DirectoryWordIndex indexJNI = new DirectoryWordIndex(DIR,
-                (p) -> new JNIWordIndex(p, 1 << 8,
-                        8192, 4096, true));
-        */
-
-        DirectoryWordIndex indexJNA = new DirectoryWordIndex(DIR,
-                (p) -> new JNAWordIndex(p, 1 << 8,
-                        8192, 4096, true));
-
-
-        DirectoryWordIndex indexFFM = new DirectoryWordIndex(DIR,
-                (p) -> new FFMWordIndex(p, 1 << 8,
-                        8192, 4096, true));
-
-        // Query
-
-        /*
-        index.getWordsWithContextInFile(FILE, WORD,
-                WordIndex.ContextBytes.SMALL_CONTEXT);
-        index.close();
-        */
-
-        indexerImproved.getWordsWithContextInFile(FILE, WORD, WordIndex.ContextBytes.SMALL_CONTEXT);
-        indexerImproved.close();
-
-        indexJNA.getWordsWithContextInFile(FILE, WORD, WordIndex.ContextBytes.SMALL_CONTEXT);
-        indexJNA.close();
-
-        /*
-        indexJNI.getWordsWithContextInFile(FILE, WORD, WordIndex.ContextBytes.SMALL_CONTEXT);
-        indexJNI.close();
-        */
-        indexFFM.getWordsWithContextInFile(FILE, WORD, WordIndex.ContextBytes.SMALL_CONTEXT);
-        indexFFM.close();
+    private static void assertWordCount(DirectoryWordIndex index, File file, String man, int expected) {
+        int manWordCount = index.getWordsWithContextInFile(file.getAbsolutePath(),
+                man, WordIndex.ContextBytes.SMALL_CONTEXT).size();
+        Assertions.assertEquals(expected, manWordCount);
     }
 }
