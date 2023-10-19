@@ -47,21 +47,4 @@ class JNIWordIndexTest {
             }
         }
     }
-
-    private static void dumpToFile(WordIndex index, WordIndex.ContextBytes ctx)
-            throws IOException {
-        File f = new File("build/results-native");
-        try (var writer = new FileWriter(f)) {
-            index.iterateWords("god", ctx).stream()
-                    .map(str -> str.replaceAll("\n", " "))
-                    .forEach(str -> {
-                        try {
-                            writer.write(str);
-                            writer.write("\n");
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-        }
-    }
 }
