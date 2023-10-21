@@ -13,7 +13,7 @@ import java.util.Collection;
 public interface WordIndex extends AutoCloseable {
 
     @FunctionalInterface
-    interface IndexProvider {
+    interface Provider {
         WordIndex indexFrom(String path) throws FileNotFoundException;
     }
 
