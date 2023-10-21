@@ -17,7 +17,7 @@ void query(WordIndex *index) {
     enum context ctx = SMALL_CONTEXT;
     void *remaining = NULL;
     int count = 0;
-    while (1) {
+    while (true) {
         remaining = file_word_index_read_with_context_buffered(
             index, buffer, BUFFER_SIZE, word, strlen(word), ctx, remaining);
         char *cursor = buffer;
@@ -26,26 +26,28 @@ void query(WordIndex *index) {
                 printf("ERRR\n");
                 abort();
             }
-            uint32_t *offset = (uint32_t *)cursor;
+            uint32_t offset;
+            memcpy(&offset, cursor, sizeof(uint32_t));
+
             // Terminate reading.
-            if (*offset == BUFF_TERM_MARK) {
+            if (offset == BUFF_TERM_MARK) {
                 break;
             }
             count++;
-            printf("len:%3d ", *offset);
+            // printf("len:%3d ", offset);
 
             // Print string.
-            char *str = cursor + sizeof(uint32_t);
-            putc('"', stdout);
-            for (uint32_t i = 0; i < *offset; i++) {
-                if (str[i] == '\n')
-                    putc(' ', stdout);
-                else
-                    putc(str[i], stdout);
-            }
-            putc('"', stdout);
-            putc('\n', stdout);
-            cursor += *offset + sizeof(uint32_t);
+            // char *str = cursor + sizeof(uint32_t);
+            // putc('"', stdout);
+            // for (uint32_t i = 0; i < offset; i++) {
+            //     if (str[i] == '\n')
+            //         putc(' ', stdout);
+            //     else
+            //         putc(str[i], stdout);
+            // }
+            // putc('"', stdout);
+            // putc('\n', stdout);
+            cursor += offset + sizeof(uint32_t);
         }
         if (remaining == NULL) {
             break;

@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -14,7 +13,7 @@ public class DirectoryWordIndex implements AutoCloseable {
     private final Map<String, WordIndex> indexMap;
     private final String dirPath;
 
-    public DirectoryWordIndex(@NotNull String dirPath, @NotNull WordIndex.IndexProvider indexProvider)
+    public DirectoryWordIndex(@NotNull String dirPath, @NotNull WordIndex.Provider indexProvider)
             throws FileNotFoundException {
         final Path path = Path.of(dirPath);
 
@@ -36,7 +35,7 @@ public class DirectoryWordIndex implements AutoCloseable {
     }
 
     private void indexFilesInDirectory(@NotNull List<File> files,
-                                       @NotNull WordIndex.IndexProvider indexProvider) {
+                                       @NotNull WordIndex.Provider indexProvider) {
         if (files.isEmpty()) {
             return;
         }
@@ -82,13 +81,13 @@ public class DirectoryWordIndex implements AutoCloseable {
 
     @Override
     public void close() {
-        this.indexMap.values().forEach(index -> {
+        for (WordIndex index: this.indexMap.values()) {
             try {
                 index.close();
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        });
+        }
     }
 
     @NotNull

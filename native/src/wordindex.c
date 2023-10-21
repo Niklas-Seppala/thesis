@@ -13,21 +13,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "wordindex/utils.h"
 
 #define EQ 0
 #define RESIZE_TRESHOLD 0.75f
+#define ERROR (-1)
+#define terminate_buffer(buffer) memcpy((buffer), &TERM_BUFF_VALUE, BUFF_TERM_MARK_SIZE)
 
 /**
  * @brief Implementation of opaque WordIndex type.
  */
 struct wordindex {
-    // FILE *file;
     char *fname;
     struct hash_table table;
     size_t word_count;
 };
+
+static const uint32_t TERM_BUFF_VALUE = BUFF_TERM_MARK;
 
 // ------------------------------------------------------------
 // Internal function prototypes
@@ -46,6 +50,8 @@ static struct index_read_iterator *read_words_with_txt_to_buffer(
     struct index_read_iterator *read_iterator, char *buffer, size_t buffer_size,
     uint32_t ctx, size_t word_len);
 static inline uint32_t single_read_size(uint32_t context, size_t word_len);
+static ssize_t normalize_word_token(const char *w_token, char **norm_word,
+                                    size_t token_len, size_t *norm_w_buff_len);
 
 // ------------------------------------------------------------
 // Public API
@@ -117,14 +123,17 @@ void *file_word_index_read_with_context_buffered(WordIndex *index, char *buffer,
                                              word_len);
     }
 
-    normalize_word(word);
-    struct hash_entry *chain = index->table.table[hash(word) % index->table.capacity];
+    char normalized_word[256];
+    normalize_word(word, normalized_word, word_len);
+
+    struct hash_entry *chain =
+        index->table.table[hash(normalized_word) % index->table.capacity];
 
     // Find word from chain, and start writing words with their context to buffer.
     // Returns NULL, if all words fit to buffer, otherwise returns position to continue
     // from. See above.
     while (chain != NULL) {
-        if (strncmp(chain->word, word, chain->word_len) == EQ) {
+        if (strncmp(chain->word, normalized_word, chain->word_len) == EQ) {
             struct index_read_iterator *new_iterator =
                 malloc(sizeof(struct index_read_iterator));
             if (new_iterator == NULL) {
@@ -141,7 +150,7 @@ void *file_word_index_read_with_context_buffered(WordIndex *index, char *buffer,
     }
 
     // Word was not found.
-    write_u32(buffer, BUFF_TERM_MARK);
+    terminate_buffer(buffer);
     return NULL;
 }
 
@@ -255,11 +264,16 @@ static bool index_word_at_position(WordIndex *index, char *word, size_t word_len
 static bool index_file(WordIndex *index, FILE *file, size_t word_buffer_size) {
     NONNULL(index);
     char word_buffer[word_buffer_size];
-    char *next_read_position_in_buffer = word_buffer;
+    char *next_pos_in_buffer = word_buffer;
     size_t readBytes = 0, position_offset = 0, truncate_offset = 0;
 
     const char *WHITESPACE = " \r\n";
-    while ((readBytes = fread_unlocked(next_read_position_in_buffer, sizeof(char),
+    // Word tokens will be copied to this buffer, and will get normalized.
+    // It's dynamic, because we might need to resize it based on token length.
+    size_t norm_word_buff_len = 64;
+    char *norm_word = malloc(norm_word_buff_len);
+
+    while ((readBytes = fread_unlocked(next_pos_in_buffer, sizeof(char),
                                        (word_buffer_size - 1) - truncate_offset, file)) !=
            0) {
         // We use stdlib string functions, so let's make sure last string is
@@ -269,24 +283,32 @@ static bool index_file(WordIndex *index, FILE *file, size_t word_buffer_size) {
         char *save_ptr;
         char *word_token = strtok_r(word_buffer, WHITESPACE, &save_ptr);
         while (word_token != NULL) {
-            const size_t token_len = strlen(word_token);
+            const size_t word_token_len = strlen(word_token);
 
             // Check if we need to move remaining word to start
             // of buffer, and continue reading to complete the
             // word.
-            if (word_token + token_len == word_buffer + (word_buffer_size - 1)) {
-                memmove(word_buffer, word_token, token_len);
-                truncate_offset = token_len;
+            if (word_token + word_token_len == word_buffer + (word_buffer_size - 1)) {
+                memmove(word_buffer, word_token, word_token_len);
+                truncate_offset = word_token_len;
                 break;
             }
 
-            // Store the word and it's file position
-            FilePosition pos =
+            const FilePosition pos =
                 position_offset - truncate_offset + (word_token - word_buffer);
-            size_t new_len = normalize_word(word_token);
-            bool success = index_word_at_position(index, word_token, new_len, pos);
+
+            const ssize_t norm_word_len = normalize_word_token(
+                word_token, &norm_word, word_token_len, &norm_word_buff_len);
+            if (norm_word_len == ERROR) {
+                free(norm_word);
+                return false;
+            }
+
+            const bool success =
+                index_word_at_position(index, norm_word, norm_word_len, pos);
             if (!success) {
-                PRINTF_ERROR("Failed to add word %s to the index", word_token);
+                PRINTF_ERROR("Failed to add word %s to the index", norm_word);
+                free(norm_word);
                 return false;
             }
 
@@ -299,9 +321,10 @@ static bool index_file(WordIndex *index, FILE *file, size_t word_buffer_size) {
         }
         // Set the next read position. If we had to truncate, next read should
         // 'continue' after truncated bytes.
-        next_read_position_in_buffer = word_buffer + truncate_offset;
+        next_pos_in_buffer = word_buffer + truncate_offset;
         position_offset += readBytes;
     }
+    free(norm_word);
     return true;
 }
 
@@ -434,7 +457,7 @@ static struct index_read_iterator *read_words_with_txt_to_buffer(
         if ((total_written + default_read_size + (sizeof(uint32_t) << 1)) > buffer_size) {
             // No more room. Mark buffer and rollback iterator
             // so we can access same position next time.
-            write_u32(buffer + total_written, BUFF_TERM_MARK);
+            terminate_buffer(buffer + total_written);
             read_iterator->index--;
             return read_iterator;
         }
@@ -455,13 +478,13 @@ static struct index_read_iterator *read_words_with_txt_to_buffer(
         size_t read_bytes = fread_unlocked(buffer + total_written + sizeof(uint32_t),
                                            sizeof(char), read_size, read_iterator->file);
         // Write string length before the read bytes.
-        write_u32(buffer + total_written, read_bytes);
+        memcpy(buffer + total_written, &read_bytes, sizeof(uint32_t));
 
         total_written += read_bytes + sizeof(uint32_t);
     }
 
     // All word occurances in file read.
-    write_u32(buffer + total_written, BUFF_TERM_MARK);
+    terminate_buffer(buffer + total_written);
     file_word_index_close_iterator(read_iterator);
     return NULL;
 }
@@ -486,6 +509,32 @@ static void do_compaction(WordIndex *index) {
             }
         }
     }
+}
+
+/**
+ * @brief Copies the original word_token into norm_word. Resizes
+ *        normalize buffer if needed.
+ *
+ * @param word_token Word token to be normalized.
+ * @param norm_word Normalized word addr.
+ * @param word_token_len Length of the word token.
+ * @param norm_word_cap Normalized word capacity addr.
+ *
+ * @return ssize_t normalized word length, in case of error -1.
+ */
+static ssize_t normalize_word_token(const char *word_token, char **norm_word,
+                                    size_t word_token_len, size_t *norm_word_cap) {
+    if (word_token_len + 1 > *norm_word_cap) {
+        *norm_word_cap <<= 1;
+        char *new_addr = realloc(*norm_word, *norm_word_cap);
+        if (new_addr == NULL) {
+            PRINTF_ERROR("%s", ALLOC_ERR);
+            return -1;
+        } else {
+            *norm_word = new_addr;
+        }
+    }
+    return normalize_word(word_token, *norm_word, word_token_len);
 }
 
 /**

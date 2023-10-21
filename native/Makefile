@@ -42,16 +42,15 @@ $(OUT)$(BINARY).so: $(OBJECTS)
 	$(CC) $(CFLAGS) -c -fPIC -o $@ $< $(ASAN) $(UBSAN)
 
 ##############################################
-#   Create object files from src dir
+#    Create test binary
 ##############################################
 $(OUT)$(BINARY).test: $(OBJECTS) test/test.o
 	$(CC) -o $@ $^ $(ASAN) $(UBSAN)
 
-##############################################
-#   Create test binary
-##############################################
+
 test_compile: $(OUT)$(BINARY).test
-	
+
+
 ##############################################
 #   Compile test src
 ##############################################
