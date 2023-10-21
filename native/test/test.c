@@ -17,7 +17,7 @@ void query(WordIndex *index) {
     enum context ctx = SMALL_CONTEXT;
     void *remaining = NULL;
     int count = 0;
-    while (1) {
+    while (true) {
         remaining = file_word_index_read_with_context_buffered(
             index, buffer, BUFFER_SIZE, word, strlen(word), ctx, remaining);
         char *cursor = buffer;

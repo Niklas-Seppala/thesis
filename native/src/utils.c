@@ -1,6 +1,7 @@
 #include "wordindex/utils.h"
 
 #include <ctype.h>
+#include <string.h>
 
 bool pos_vec_add(struct pos_vec *vec, FilePosition position) {
     if (vec->length == vec->capacity) {
@@ -38,14 +39,16 @@ FilePosition pos_vec_iter_next(struct index_read_iterator *iter) {
     return iter->vec->array[iter->index++];
 }
 
-size_t normalize_word(char *word) {
+size_t normalize_word(const char *word, char *dest, size_t size) {
     NONNULL(word);
+    strncpy(dest, word, size);
+    dest[size] = '\0';
     char c;
-    char *d = word;
+    char *d = dest;
     size_t length = 0;
-    while ((c = *word++)) {
+    while ((c = *dest++)) {
         if (ispunct(c)) {
-            *(word - 1) = '\0';
+            *(dest - 1) = '\0';
             break;
         }
         length++;

@@ -10,15 +10,15 @@ DEPFILES=$(patsubst %.c,%.d,$(CFILES))
 -include $(DEPFILES)
 
 ############## DEBUG BUILDS ###############
-UBSAN=-fsanitize=undefined
-ASAN=-fsanitize=address -static-libasan
-DEBUG=-g
-OPT=-O0
-RT_NULL_CHECKS=-DNULL_CHECKS -DNULL_KILLS
+# UBSAN=-fsanitize=undefined
+# ASAN=-fsanitize=address -static-libasan
+# DEBUG=-g
+# OPT=-O0
+# RT_NULL_CHECKS=-DNULL_CHECKS -DNULL_KILLS
 ###########################################
 
 ############# RELEASE BUILDS ##############
-# OPT=-O3
+OPT=-O3
 ###########################################
 
 CC=gcc
@@ -42,16 +42,15 @@ $(OUT)$(BINARY).so: $(OBJECTS)
 	$(CC) $(CFLAGS) -c -fPIC -o $@ $< $(ASAN) $(UBSAN)
 
 ##############################################
-#   Create object files from src dir
+#    Create test binary
 ##############################################
 $(OUT)$(BINARY).test: $(OBJECTS) test/test.o
 	$(CC) -o $@ $^ $(ASAN) $(UBSAN)
 
-##############################################
-#   Create test binary
-##############################################
+
 test_compile: $(OUT)$(BINARY).test
-	
+
+
 ##############################################
 #   Compile test src
 ##############################################
