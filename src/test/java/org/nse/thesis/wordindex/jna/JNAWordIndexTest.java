@@ -22,7 +22,6 @@ class JNAWordIndexTest {
         try (WordIndex index = new JNAWordIndex(TEST_FILE,
                 1 << 8,
                 8192, 4096, true)) {
-            dumpToFile(index, ctx);
 
             long count = index.getWords(searchWord, ctx)
                     .size();
@@ -41,23 +40,6 @@ class JNAWordIndexTest {
                 long count = iterator.stream().count();
                 assertEquals(4472, count);
             }
-        }
-    }
-
-    private static void dumpToFile(WordIndex index, WordIndex.ContextBytes ctx)
-            throws IOException {
-        File f = new File("build/results-native");
-        try (var writer = new FileWriter(f)) {
-            index.iterateWords("god", ctx).stream()
-                    .map(str -> str.replaceAll("\n", " "))
-                    .forEach(str -> {
-                        try {
-                            writer.write(str);
-                            writer.write("\n");
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
         }
     }
 }

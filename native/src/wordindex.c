@@ -83,7 +83,7 @@ WordIndex *file_word_index_open(const char *filepath, size_t capacity,
         file_word_index_close(index);
         return NULL;
     }
-    strncpy(fname, filepath, fpath_len);
+    memccpy(fname, filepath, '\0', fpath_len);
     index->fname = fname;
 
     index->word_count = 0;

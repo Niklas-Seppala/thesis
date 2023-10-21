@@ -53,7 +53,7 @@ extern int errno;
         }                                                                      \
     }
 #else
-#define NONNULL UNDEFINED
+#define NONNULL(ptr) UNDEFINED
 #endif
 
 #ifndef VEC_DEF_CAP

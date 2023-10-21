@@ -10,22 +10,19 @@ DEPFILES=$(patsubst %.c,%.d,$(CFILES))
 -include $(DEPFILES)
 
 ############## DEBUG BUILDS ###############
-# UBSAN=-fsanitize=undefined
-# ASAN=-fsanitize=address -static-libasan
-# DEBUG=-g
-# OPT=-O0
-# RT_NULL_CHECKS=-DNULL_CHECKS -DNULL_KILLS
-###########################################
-
-############# RELEASE BUILDS ##############
-OPT=-O3
+dbg_compile: UBSAN=-fsanitize=undefined
+dbg_compile: ASAN=-fsanitize=address -static-libasan
+dbg_compile: DEBUG=-g
+dbg_compile: OPT=-O0
+dbg_compile: RT_NULL_CHECKS=-DNULL_CHECKS -DNULL_KILLS
 ###########################################
 
 CC=gcc
 CC_WARN=-Wall -Wshadow -Wextra -Wformat=2 -Wpedantic -fmax-errors=10 -Wno-unknown-pragmas
+OPT=-O3
 CFLAGS=${CC_WARN} $(OPT) -std=gnu11 ${DEBUG} -DVEC_DEF_CAP=8 ${RT_NULL_CHECKS} $(foreach D,$(INCDIRS),-I$(D)) ${DEPFLAGS}
 
-.PHONY: all clean test_compile test mkdirs
+.PHONY: all clean dbg_compile test mkdirs
 
 all: mkdirs $(OUT)$(BINARY).so
 
@@ -48,13 +45,14 @@ $(OUT)$(BINARY).test: $(OBJECTS) test/test.o
 	$(CC) -o $@ $^ $(ASAN) $(UBSAN)
 
 
-test_compile: $(OUT)$(BINARY).test
+dbg_compile: $(OUT)$(BINARY).test
 
 
 ##############################################
 #   Compile test src
 ##############################################
-test: test_compile
+
+test: dbg_compile
 	@./$(OUT)${BINARY}.test ${RUN_ARGS}
 
 clean:
