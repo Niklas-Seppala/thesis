@@ -23,7 +23,7 @@
 #endif
 
 extern int errno;
-#define ALLOC_ERR "Failed to allcoate"
+#define ALLOC_ERR "Failed to allocate"
 
 #define PRINTF_ERROR(format, ...)                       \
     {                                                   \
@@ -153,20 +153,12 @@ struct hash_table {
 /**
  * @brief
  *
- * @param bytes
- * @param value
- */
-void write_u32(char *bytes, uint32_t value);
-
-// --------------------------------------------------
-
-/**
- * @brief
- *
  * @param word
+ * @param dest
+ * @param size
  * @return size_t
  */
-size_t normalize_word(char *word);
+size_t normalize_word(const char *word, char *dest, size_t size);
 
 // --------------------------------------------------
 

@@ -13,7 +13,9 @@
 
 #include "wordindex/utils.h"
 
-#define BUFF_TERM_MARK 0
+#define BUFF_TERM_MAKR_TYPE uint32_t
+#define BUFF_TERM_MARK ((BUFF_TERM_MAKR_TYPE)0)
+#define BUFF_TERM_MARK_SIZE (sizeof(BUFF_TERM_MAKR_TYPE))
 
 /**
  * @brief
