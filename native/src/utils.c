@@ -2,13 +2,6 @@
 
 #include <ctype.h>
 
-void write_u32(char *bytes, uint32_t value) {
-    *bytes++ = value & 0xff;
-    *bytes++ = (value >> 8) & 0xff;
-    *bytes++ = (value >> 16) & 0xff;
-    *bytes++ = (value >> 24) & 0xff;
-}
-
 bool pos_vec_add(struct pos_vec *vec, FilePosition position) {
     if (vec->length == vec->capacity) {
         vec->capacity <<= 1;

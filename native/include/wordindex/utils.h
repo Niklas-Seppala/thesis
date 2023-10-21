@@ -153,16 +153,6 @@ struct hash_table {
 /**
  * @brief
  *
- * @param bytes
- * @param value
- */
-void write_u32(char *bytes, uint32_t value);
-
-// --------------------------------------------------
-
-/**
- * @brief
- *
  * @param word
  * @return size_t
  */

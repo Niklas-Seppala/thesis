@@ -10,15 +10,15 @@ DEPFILES=$(patsubst %.c,%.d,$(CFILES))
 -include $(DEPFILES)
 
 ############## DEBUG BUILDS ###############
-# UBSAN=-fsanitize=undefined
-# ASAN=-fsanitize=address -static-libasan
-# DEBUG=-g
-# OPT=-O0
-# RT_NULL_CHECKS=-DNULL_CHECKS -DNULL_KILLS
+UBSAN=-fsanitize=undefined
+ASAN=-fsanitize=address -static-libasan
+DEBUG=-g
+OPT=-O0
+RT_NULL_CHECKS=-DNULL_CHECKS -DNULL_KILLS
 ###########################################
 
 ############# RELEASE BUILDS ##############
-OPT=-O3
+# OPT=-O3
 ###########################################
 
 CC=gcc

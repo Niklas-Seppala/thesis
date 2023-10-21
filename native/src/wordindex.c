@@ -18,16 +18,18 @@
 
 #define EQ 0
 #define RESIZE_TRESHOLD 0.75f
+#define terminate_buffer(buffer) memcpy((buffer), &TERM_BUFF_VALUE, BUFF_TERM_MARK_SIZE)
 
 /**
  * @brief Implementation of opaque WordIndex type.
  */
 struct wordindex {
-    // FILE *file;
     char *fname;
     struct hash_table table;
     size_t word_count;
 };
+
+static const uint32_t TERM_BUFF_VALUE = BUFF_TERM_MARK;
 
 // ------------------------------------------------------------
 // Internal function prototypes
@@ -141,7 +143,7 @@ void *file_word_index_read_with_context_buffered(WordIndex *index, char *buffer,
     }
 
     // Word was not found.
-    write_u32(buffer, BUFF_TERM_MARK);
+    terminate_buffer(buffer);
     return NULL;
 }
 
@@ -434,7 +436,7 @@ static struct index_read_iterator *read_words_with_txt_to_buffer(
         if ((total_written + default_read_size + (sizeof(uint32_t) << 1)) > buffer_size) {
             // No more room. Mark buffer and rollback iterator
             // so we can access same position next time.
-            write_u32(buffer + total_written, BUFF_TERM_MARK);
+            terminate_buffer(buffer + total_written);
             read_iterator->index--;
             return read_iterator;
         }
@@ -455,13 +457,13 @@ static struct index_read_iterator *read_words_with_txt_to_buffer(
         size_t read_bytes = fread_unlocked(buffer + total_written + sizeof(uint32_t),
                                            sizeof(char), read_size, read_iterator->file);
         // Write string length before the read bytes.
-        write_u32(buffer + total_written, read_bytes);
+        memcpy(buffer + total_written, &read_bytes, sizeof(uint32_t));
 
         total_written += read_bytes + sizeof(uint32_t);
     }
 
     // All word occurances in file read.
-    write_u32(buffer + total_written, BUFF_TERM_MARK);
+    terminate_buffer(buffer + total_written);
     file_word_index_close_iterator(read_iterator);
     return NULL;
 }
