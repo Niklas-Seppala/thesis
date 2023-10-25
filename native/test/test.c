@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/resource.h>
-#include <sys/time.h>
 #include <unistd.h>
 
 #include "wordindex.h"
@@ -12,7 +11,7 @@
 #define BUFFER_SIZE 4096
 
 void query(WordIndex *index) {
-    char word[] = "god";
+    char word[] = "easy";
     char *buffer = malloc(BUFFER_SIZE);
     enum context ctx = SMALL_CONTEXT;
     void *remaining = NULL;

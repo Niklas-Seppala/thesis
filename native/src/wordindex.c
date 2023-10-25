@@ -15,6 +15,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "wordindex/analyzers.h"
 #include "wordindex/utils.h"
 
 #define EQ 0
@@ -29,6 +30,7 @@ struct wordindex {
     char *fname;
     struct hash_table table;
     size_t word_count;
+    enum index_analyzer analyzer;
 };
 
 static const uint32_t TERM_BUFF_VALUE = BUFF_TERM_MARK;
@@ -51,7 +53,8 @@ static struct index_read_iterator *read_words_with_txt_to_buffer(
     uint32_t ctx, size_t word_len);
 static inline uint32_t single_read_size(uint32_t context, size_t word_len);
 static ssize_t normalize_word_token(const char *w_token, char **norm_word,
-                                    size_t token_len, size_t *norm_w_buff_len);
+                                    size_t token_len, size_t *norm_w_buff_len,
+                                    enum index_analyzer analyzer);
 
 // ------------------------------------------------------------
 // Public API
@@ -86,6 +89,7 @@ WordIndex *file_word_index_open(const char *filepath, size_t capacity,
     memccpy(fname, filepath, '\0', fpath_len);
     index->fname = fname;
 
+    index->analyzer = TEXT;
     index->word_count = 0;
     FILE *file = fopen(index->fname, "r");
     if (file != NULL) {
@@ -123,8 +127,9 @@ void *file_word_index_read_with_context_buffered(WordIndex *index, char *buffer,
                                              word_len);
     }
 
-    char normalized_word[256];
-    normalize_word(word, normalized_word, word_len);
+    char normalized_word[word_len + 1];
+    analyzer_normalize(index->analyzer, word, word_len, normalized_word);
+    // normalize_word(word, normalized_word, word_len);
 
     struct hash_entry *chain =
         index->table.table[hash(normalized_word) % index->table.capacity];
@@ -267,7 +272,8 @@ static bool index_file(WordIndex *index, FILE *file, size_t word_buffer_size) {
     char *next_pos_in_buffer = word_buffer;
     size_t readBytes = 0, position_offset = 0, truncate_offset = 0;
 
-    const char *WHITESPACE = " \r\n";
+    // const char *WHITESPACE = " \r\n";
+    const char *ANALYZER_DELIMITERS = analyzer_get_delim(index->analyzer);
     // Word tokens will be copied to this buffer, and will get normalized.
     // It's dynamic, because we might need to resize it based on token length.
     size_t norm_word_buff_len = 64;
@@ -281,7 +287,7 @@ static bool index_file(WordIndex *index, FILE *file, size_t word_buffer_size) {
         word_buffer[truncate_offset + readBytes] = '\0';
 
         char *save_ptr;
-        char *word_token = strtok_r(word_buffer, WHITESPACE, &save_ptr);
+        char *word_token = strtok_r(word_buffer, ANALYZER_DELIMITERS, &save_ptr);
         while (word_token != NULL) {
             const size_t word_token_len = strlen(word_token);
 
@@ -297,8 +303,10 @@ static bool index_file(WordIndex *index, FILE *file, size_t word_buffer_size) {
             const FilePosition pos =
                 position_offset - truncate_offset + (word_token - word_buffer);
 
-            const ssize_t norm_word_len = normalize_word_token(
-                word_token, &norm_word, word_token_len, &norm_word_buff_len);
+            // TODO: Do I even need normalization? Something to think about..
+            const ssize_t norm_word_len =
+                normalize_word_token(word_token, &norm_word, word_token_len,
+                                     &norm_word_buff_len, index->analyzer);
             if (norm_word_len == ERROR) {
                 free(norm_word);
                 return false;
@@ -313,7 +321,7 @@ static bool index_file(WordIndex *index, FILE *file, size_t word_buffer_size) {
             }
 
             // Get next token.
-            word_token = strtok_r(NULL, WHITESPACE, &save_ptr);
+            word_token = strtok_r(NULL, ANALYZER_DELIMITERS, &save_ptr);
             if (word_token == NULL) {
                 // Reading buffer is done. Didn't truncate, so reset to zero.
                 truncate_offset = 0;
@@ -513,17 +521,19 @@ static void do_compaction(WordIndex *index) {
 
 /**
  * @brief Copies the original word_token into norm_word. Resizes
- *        normalize buffer if needed.
+ *        normalize buffer if needed. @see wordindex/analyzers.h
  *
  * @param word_token Word token to be normalized.
  * @param norm_word Normalized word addr.
  * @param word_token_len Length of the word token.
  * @param norm_word_cap Normalized word capacity addr.
+ * @param analyzer Analyzer used in normalization.
  *
  * @return ssize_t normalized word length, in case of error -1.
  */
 static ssize_t normalize_word_token(const char *word_token, char **norm_word,
-                                    size_t word_token_len, size_t *norm_word_cap) {
+                                    size_t word_token_len, size_t *norm_word_cap,
+                                    enum index_analyzer analyzer) {
     if (word_token_len + 1 > *norm_word_cap) {
         *norm_word_cap <<= 1;
         char *new_addr = realloc(*norm_word, *norm_word_cap);
@@ -534,7 +544,7 @@ static ssize_t normalize_word_token(const char *word_token, char **norm_word,
             *norm_word = new_addr;
         }
     }
-    return normalize_word(word_token, *norm_word, word_token_len);
+    return analyzer_normalize(analyzer, word_token, word_token_len, *norm_word);
 }
 
 /**

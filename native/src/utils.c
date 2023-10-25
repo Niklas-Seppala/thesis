@@ -39,24 +39,6 @@ FilePosition pos_vec_iter_next(struct index_read_iterator *iter) {
     return iter->vec->array[iter->index++];
 }
 
-size_t normalize_word(const char *word, char *dest, size_t size) {
-    NONNULL(word);
-    strncpy(dest, word, size);
-    dest[size] = '\0';
-    char c;
-    char *d = dest;
-    size_t length = 0;
-    while ((c = *dest++)) {
-        if (ispunct(c)) {
-            *(dest - 1) = '\0';
-            break;
-        }
-        length++;
-    }
-    for (; *d; d++) *d = tolower(*d);
-    return length;
-}
-
 uint32_t hash(const void *word) {
     if (word == NULL) return 0;
 

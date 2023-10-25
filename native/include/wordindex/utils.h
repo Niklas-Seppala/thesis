@@ -154,18 +154,6 @@ struct hash_table {
  * @brief
  *
  * @param word
- * @param dest
- * @param size
- * @return size_t
- */
-size_t normalize_word(const char *word, char *dest, size_t size);
-
-// --------------------------------------------------
-
-/**
- * @brief
- *
- * @param word
  * @return uint32_t
  */
 uint32_t hash(const void *word);
