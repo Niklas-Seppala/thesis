@@ -1,8 +1,16 @@
 package org.nse.thesis.wordindex.pojo;
 
-import java.io.FileNotFoundException;
-
+/**
+ *
+ */
 public interface IndexAnalyzer {
 
+    int asNative();
+
+    /**
+     *
+     * @param c
+     * @return
+     */
     boolean breakAt(char c);
 }

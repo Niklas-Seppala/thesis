@@ -10,6 +10,8 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class WordIndexTestBase {
+
+    public static final String TEST_FILE = "src/test/resources/bible.txt";
     private final Map<String, Integer> wordOccurrences = new HashMap<>();
     private final IndexAnalyzer analyzer = new WhitespaceTextAnalyzer();
 

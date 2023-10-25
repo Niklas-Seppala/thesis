@@ -3,6 +3,7 @@ package org.nse.thesis.wordindex.jni;
 import org.jetbrains.annotations.NotNull;
 import org.nse.thesis.wordindex.WordContextIterator;
 import org.nse.thesis.wordindex.WordIndex;
+import org.nse.thesis.wordindex.pojo.IndexAnalyzer;
 
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
@@ -29,7 +30,7 @@ public class JNIWordIndex implements WordIndex {
 
     private final long nativeHandle;
     private final String filepath;
-
+    private final IndexAnalyzer analyzer;
     private final int queryBufferSize;
 
     /**
@@ -38,6 +39,7 @@ public class JNIWordIndex implements WordIndex {
      * or Exception is thrown.
      *
      * @param path                 Path to text file to be indexed.
+     * @param analyzer             Analyzer used in tokenizing words from text.
      * @param wordCapacityEstimate Estimate how many unique words file might contain.
      * @param indexingBufferSize   Suggested size of buffer that's used when indexing the file.
      * @param queryBufferSize      Suggested size of buffer that's used when querying
@@ -47,7 +49,8 @@ public class JNIWordIndex implements WordIndex {
      *                             time cost.
      * @throws FileNotFoundException When file path is invalid.
      */
-    public JNIWordIndex(@NotNull final String path, long wordCapacityEstimate,
+    public JNIWordIndex(@NotNull final String path, @NotNull IndexAnalyzer analyzer,
+                        long wordCapacityEstimate,
                         long indexingBufferSize, int queryBufferSize,
                         final boolean shouldCompact) throws FileNotFoundException {
 
@@ -55,6 +58,7 @@ public class JNIWordIndex implements WordIndex {
             throw new FileNotFoundException(path);
         }
         this.filepath = path;
+        this.analyzer = analyzer;
         this.queryBufferSize = Math.max(queryBufferSize, MIN_QUERY_BUFFER_SIZE);
 
         if (wordCapacityEstimate < MIN_WORD_CAPACITY_ESTIMATE) {
