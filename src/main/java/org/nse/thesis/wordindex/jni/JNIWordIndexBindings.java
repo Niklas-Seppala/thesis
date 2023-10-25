@@ -17,12 +17,13 @@ public class JNIWordIndexBindings {
      * Remember to close it!
      *
      * @param filepath   Path to text file to be indexed.
+     * @param analyzer   Analyzer used in tokenizing words from text.
      * @param capacity   Estimate how many unique words file might contain.
      * @param bufferSize Suggested size of buffer that's used when indexing the file.
      * @param compact    Should index be compacted after indexing is done.
      * @return Handle to native WordIndex
      */
-    public static native long wordIndexOpen(String filepath, long capacity,
+    public static native long wordIndexOpen(String filepath, int analyzer, long capacity,
                                              long bufferSize, boolean compact);
 
     /**

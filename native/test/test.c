@@ -33,19 +33,6 @@ void query(WordIndex *index) {
                 break;
             }
             count++;
-            // printf("len:%3d ", offset);
-
-            // Print string.
-            // char *str = cursor + sizeof(uint32_t);
-            // putc('"', stdout);
-            // for (uint32_t i = 0; i < offset; i++) {
-            //     if (str[i] == '\n')
-            //         putc(' ', stdout);
-            //     else
-            //         putc(str[i], stdout);
-            // }
-            // putc('"', stdout);
-            // putc('\n', stdout);
             cursor += offset + sizeof(uint32_t);
         }
         if (remaining == NULL) {
@@ -58,7 +45,7 @@ void query(WordIndex *index) {
 }
 
 int main(void) {
-    WordIndex *index = file_word_index_open("test/tfile.txt", 15, 8192, true);
+    WordIndex *index = file_word_index_open("test/tfile.txt", TEXT, 15, 8192, true);
     if (index != NULL) {
         query(index);
     }

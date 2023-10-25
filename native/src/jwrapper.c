@@ -16,12 +16,12 @@
  */
 JNIEXPORT jlong JNICALL
 Java_org_nse_thesis_wordindex_jni_JNIWordIndexBindings_wordIndexOpen(
-    JNIEnv *env, jclass class, jstring filepath, jlong capacity, jlong bufferSize,
+    JNIEnv *env, jclass class, jstring filepath, jint analyzer, jlong capacity, jlong bufferSize,
     jboolean compact) {
     NOT_USED(class);
 
     const char *fpath = (*env)->GetStringUTFChars(env, filepath, NULL);
-    WordIndex *index_handle = file_word_index_open(fpath, capacity, bufferSize, compact);
+    WordIndex *index_handle = file_word_index_open(fpath, analyzer, capacity, bufferSize, compact);
     (*env)->ReleaseStringUTFChars(env, filepath, fpath);
     return (jlong)index_handle;
 }

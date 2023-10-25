@@ -1,18 +1,16 @@
 package org.nse.thesis.wordindex.jna;
 
 import org.junit.jupiter.api.Test;
-import org.nse.thesis.wordindex.WordContextIterator;
 import org.nse.thesis.wordindex.WordIndex;
 import org.nse.thesis.wordindex.WordIndexTestBase;
-import org.nse.thesis.wordindex.ffm.FFMWordIndex;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class JNAWordIndexTest extends WordIndexTestBase {
+
+    static {
+        JNAWordIndexLibrary.Impl.load("build/libs/wordindex.so");
+    }
 
     @Test
     void testGetWords() {

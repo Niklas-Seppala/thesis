@@ -69,7 +69,8 @@ public class JNIWordIndex implements WordIndex {
             indexingBufferSize = MIN_INDEXING_BUFFER_SIZE;
         }
 
-        this.nativeHandle = JNIWordIndexBindings.wordIndexOpen(path, wordCapacityEstimate,
+        this.nativeHandle = JNIWordIndexBindings.wordIndexOpen(path, analyzer.asNative(),
+                wordCapacityEstimate,
                 indexingBufferSize,
                 shouldCompact);
     }

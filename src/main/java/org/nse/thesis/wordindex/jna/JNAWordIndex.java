@@ -30,9 +30,6 @@ public class JNAWordIndex implements WordIndex {
 
     private final Pointer nativeHandle;
     private final String filepath;
-
-    private final IndexAnalyzer analyzer;
-
     private final int queryBufferSize;
 
     /**
@@ -60,7 +57,6 @@ public class JNAWordIndex implements WordIndex {
             throw new FileNotFoundException(path);
         }
         this.filepath = path;
-        this.analyzer = analyzer;
         this.queryBufferSize = Math.max(queryBufferSize, MIN_QUERY_BUFFER_SIZE);
 
         if (wordCapacityEstimate < MIN_WORD_CAPACITY_ESTIMATE) {
@@ -71,7 +67,8 @@ public class JNAWordIndex implements WordIndex {
             indexingBufferSize = MIN_INDEXING_BUFFER_SIZE;
         }
 
-        this.nativeHandle = JNAWordIndexLibrary.INSTANCE.file_word_index_open(path, wordCapacityEstimate,
+        this.nativeHandle = JNAWordIndexLibrary.Impl.get().file_word_index_open(path, analyzer.asNative(),
+                wordCapacityEstimate,
                 indexingBufferSize,
                 shouldCompact);
     }
@@ -114,7 +111,7 @@ public class JNAWordIndex implements WordIndex {
 
         Collection<String> results = new ArrayList<>();
         do {
-            nativeIterHandle = JNAWordIndexLibrary.INSTANCE.file_word_index_read_with_context_buffered(
+            nativeIterHandle = JNAWordIndexLibrary.Impl.get().file_word_index_read_with_context_buffered(
                     this.nativeHandle,
                     Native.getDirectBufferPointer(readBuffer), readBuffer.capacity(), word, wordBytesLength, ctx.size(),
                     nativeIterHandle);
@@ -161,7 +158,7 @@ public class JNAWordIndex implements WordIndex {
      */
     @Override
     public void close() {
-        JNAWordIndexLibrary.INSTANCE.file_word_index_close(this.nativeHandle);
+        JNAWordIndexLibrary.Impl.get().file_word_index_close(this.nativeHandle);
     }
 
     /**
@@ -201,7 +198,7 @@ public class JNAWordIndex implements WordIndex {
             // If native method returned NULL_PTR, it already freed
             // existing iterator, or it never existed.
             if (this.iteratorHandle != Pointer.NULL) {
-                JNAWordIndexLibrary.INSTANCE.file_word_index_close_iterator(this.iteratorHandle);
+                JNAWordIndexLibrary.Impl.get().file_word_index_close_iterator(this.iteratorHandle);
             }
         }
 
@@ -245,7 +242,7 @@ public class JNAWordIndex implements WordIndex {
          */
         private void readIntoBuffer() {
             this.iteratorHandle =
-                    JNAWordIndexLibrary.INSTANCE.file_word_index_read_with_context_buffered(this.indexHandle,
+                    JNAWordIndexLibrary.Impl.get().file_word_index_read_with_context_buffered(this.indexHandle,
                             Native.getDirectBufferPointer(this.buffer), this.buffer.capacity(), word, wordLen,
                             ctx.size(),
                             this.iteratorHandle);

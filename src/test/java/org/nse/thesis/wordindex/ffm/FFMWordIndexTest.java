@@ -1,18 +1,14 @@
 package org.nse.thesis.wordindex.ffm;
 
 import org.junit.jupiter.api.Test;
-import org.nse.thesis.wordindex.WordContextIterator;
 import org.nse.thesis.wordindex.WordIndex;
 import org.nse.thesis.wordindex.WordIndexTestBase;
-import org.nse.thesis.wordindex.pojo.ImprovedJavaWordIndex;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class FFMWordIndexTest extends WordIndexTestBase {
+
+    static {
+        FFMNativeHandles.load("build/libs/wordindex.so");
+    }
 
     @Test
     void testGetWords() {

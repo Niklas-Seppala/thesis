@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "wordindex/analyzers.h"
 #include "wordindex/utils.h"
 
 #define BUFF_TERM_MAKR_TYPE uint32_t
@@ -38,13 +39,14 @@ typedef struct wordindex WordIndex;
  * @brief Opens a WordIndex over specified file.
  *
  * @param filepath
+ * @param analyzer
  * @param capacity
  * @param word_buffer_size
  * @param compact
  * @return WordIndex*
  */
-WordIndex *file_word_index_open(const char *filepath, size_t capacity,
-                                size_t word_buffer_size, bool compact);
+WordIndex *file_word_index_open(const char *filepath, enum index_analyzer analyzer,
+                                size_t capacity, size_t word_buffer_size, bool compact);
 
 /**
  * @brief

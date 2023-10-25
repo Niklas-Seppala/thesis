@@ -7,7 +7,6 @@ import org.nse.thesis.wordindex.pojo.IndexAnalyzer;
 
 import java.io.FileNotFoundException;
 import java.lang.foreign.*;
-import java.lang.invoke.MethodHandle;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -27,75 +26,9 @@ import java.util.stream.StreamSupport;
  * @author Niklas Seppälä
  */
 public class FFMWordIndex implements WordIndex {
-
-    /**
-     * Native handle for open the index.
-     */
-    private static final MethodHandle openIndex;
-
-    /**
-     * Native handle for closing the index.
-     */
-    private static final MethodHandle closeIndex;
-
-    /**
-     * Native handle for closing result iterator.
-     */
-    private static final MethodHandle closeIterator;
-
-    /**
-     * Native handle for index query.
-     */
-    private static final MethodHandle query;
-
-    static {
-        System.load(Path.of("build/libs/wordindex.so").toAbsolutePath().toString());
-        var lookup = SymbolLookup.loaderLookup();
-
-        final String FF_OPEN_NAME = "file_word_index_open";
-        final String FF_CLOSE_NAME = "file_word_index_close";
-        final String FF_CONTEXT_QUERY_NAME = "file_word_index_read_with_context_buffered";
-        final String FF_ITER_CLOSE = "file_word_index_close_iterator";
-
-        MemorySegment openAddr = lookup.lookup(FF_OPEN_NAME).orElseThrow();
-        MemorySegment closeAddr = lookup.lookup(FF_CLOSE_NAME).orElseThrow();
-        MemorySegment closeIter = lookup.lookup(FF_ITER_CLOSE).orElseThrow();
-        MemorySegment readAddr = lookup.lookup(FF_CONTEXT_QUERY_NAME).orElseThrow();
-
-        Linker linker = Linker.nativeLinker();
-
-        openIndex = linker.downcallHandle(
-                openAddr,
-                FunctionDescriptor.of(
-                        ValueLayout.ADDRESS,
-                        ValueLayout.ADDRESS,
-                        ValueLayout.JAVA_LONG,
-                        ValueLayout.JAVA_LONG,
-                        ValueLayout.JAVA_BOOLEAN)
-        );
-
-        closeIndex =
-                linker.downcallHandle(
-                        closeAddr,
-                        FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
-
-        closeIterator = linker.downcallHandle(
-                closeIter, FunctionDescriptor.ofVoid(ValueLayout.ADDRESS)
-        );
-
-        query = linker.downcallHandle(
-                readAddr, FunctionDescriptor.of(ValueLayout.ADDRESS,
-                        ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG,
-                        ValueLayout.ADDRESS, ValueLayout.JAVA_LONG,
-                        ValueLayout.JAVA_LONG, ValueLayout.ADDRESS)
-        );
-
-    }
-
     private final MemoryAddress handle;
     private final String filepath;
-
-    private final IndexAnalyzer analyzer;
+    private final int queryBufferSize;
 
     /**
      * Create Java object that acts as a proxy for native WordIndex.
@@ -123,7 +56,6 @@ public class FFMWordIndex implements WordIndex {
         }
         this.filepath = path;
         this.queryBufferSize = Math.max(queryBufferSize, MIN_QUERY_BUFFER_SIZE);
-        this.analyzer = analyzer;
 
         if (wordCapacityEstimate < MIN_WORD_CAPACITY_ESTIMATE) {
             wordCapacityEstimate = MIN_WORD_CAPACITY_ESTIMATE;
@@ -135,8 +67,9 @@ public class FFMWordIndex implements WordIndex {
 
         try (MemorySession session = MemorySession.openConfined()) {
             MemorySegment nativeFilePath = session.allocateUtf8String(path);
-            handle = (MemoryAddress) openIndex.invoke(
+            handle = (MemoryAddress) FFMNativeHandles.get().openIndex().invoke(
                     nativeFilePath,
+                    analyzer.asNative(),
                     wordCapacityEstimate,
                     indexingBufferSize, shouldCompact);
         } catch (Throwable e) {
@@ -144,7 +77,6 @@ public class FFMWordIndex implements WordIndex {
         }
     }
 
-    private final int queryBufferSize;
 
     /**
      * Query the index for all occurrences of words from indexed file, with specified
@@ -175,7 +107,7 @@ public class FFMWordIndex implements WordIndex {
             bb.order(ByteOrder.nativeOrder());
 
             do {
-                nativeResultIteratorPointer = (MemoryAddress) query.invoke(
+                nativeResultIteratorPointer = (MemoryAddress) FFMNativeHandles.get().query().invoke(
                         this.handle,
                         readBuffer, readBuffer.byteSize(), nativeWord, wordBytesLength,
                         ctx.size(),
@@ -224,7 +156,7 @@ public class FFMWordIndex implements WordIndex {
     @Override
     public void close() {
         try {
-            closeIndex.invoke(handle);
+            FFMNativeHandles.get().closeIndex().invoke(handle);
         } catch (Throwable e) {
             throw new RuntimeException("Failed to close native index", e);
         }
@@ -282,7 +214,7 @@ public class FFMWordIndex implements WordIndex {
             // existing iterator, or it never existed.
             if (!this.iteratorHandle.equals(MemoryAddress.NULL)) {
                 try {
-                    FFMWordIndex.closeIterator.invoke(this.iteratorHandle);
+                    FFMNativeHandles.get().closeIterator().invoke(this.iteratorHandle);
                 } catch (Throwable e) {
                     throw new RuntimeException(e);
                 }
@@ -333,7 +265,7 @@ public class FFMWordIndex implements WordIndex {
          */
         private void readIntoBuffer() throws Throwable {
             this.iteratorHandle =
-                    (MemoryAddress) FFMWordIndex.query.invoke(this.indexHandle,
+                    (MemoryAddress) FFMNativeHandles.get().query().invoke(this.indexHandle,
                             this.underlyingBuffer, this.buffer.capacity(), wordSegment,
                             wordLen,
                             ctx.size(),

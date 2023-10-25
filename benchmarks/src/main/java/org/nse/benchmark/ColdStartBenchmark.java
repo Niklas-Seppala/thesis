@@ -1,35 +1,36 @@
 package org.nse.benchmark;
 
 
-import java.util.concurrent.TimeUnit;
-
 import org.nse.thesis.wordindex.WordIndex;
+import org.nse.thesis.wordindex.ffm.FFMNativeHandles;
 import org.nse.thesis.wordindex.ffm.FFMWordIndex;
 import org.nse.thesis.wordindex.jna.JNAWordIndex;
+import org.nse.thesis.wordindex.jna.JNAWordIndexLibrary;
 import org.nse.thesis.wordindex.jni.JNIWordIndex;
 import org.nse.thesis.wordindex.jni.JNIWordIndexBindings;
 import org.nse.thesis.wordindex.pojo.ImprovedJavaWordIndex;
 import org.nse.thesis.wordindex.pojo.JavaWordIndex;
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.nse.thesis.wordindex.pojo.WhitespaceTextAnalyzer;
+import org.openjdk.jmh.annotations.*;
+
+import java.util.concurrent.TimeUnit;
 
 public class ColdStartBenchmark {
 
+    static final String file = "testfiles/bible10x.txt";
+
     static {
         JNIWordIndexBindings.load("build/libs/wordindex.so");
+        JNAWordIndexLibrary.Impl.load("build/libs/wordindex.so");
+        FFMNativeHandles.load("build/libs/wordindex.so");
     }
-
-    static final String file = "testfiles/bible10x.txt";
 
     @Benchmark
     @BenchmarkMode(Mode.SingleShotTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     @Fork(value = 1, warmups = 1)
     public WordIndex coldStartPOJOIndexCreation() throws Exception {
-        try (WordIndex index = new JavaWordIndex(file)) {
+        try (WordIndex index = new JavaWordIndex(file, new WhitespaceTextAnalyzer())) {
             return index;
         }
     }
@@ -39,7 +40,7 @@ public class ColdStartBenchmark {
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     @Fork(value = 1, warmups = 1)
     public WordIndex coldStartPOJOImprovedIndexCreation() throws Exception {
-        try (WordIndex index = new ImprovedJavaWordIndex(file)) {
+        try (WordIndex index = new ImprovedJavaWordIndex(file, new WhitespaceTextAnalyzer())) {
             return index;
         }
     }
@@ -49,7 +50,8 @@ public class ColdStartBenchmark {
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     @Fork(value = 1, warmups = 1)
     public WordIndex coldStartJNIIndexCreation() throws Exception {
-        try (WordIndex index = new JNIWordIndex(file, 16, 64, 10, true)) {
+        try (WordIndex index = new JNIWordIndex(file, new WhitespaceTextAnalyzer(),
+                16, 64, 10, true)) {
             return index;
         }
     }
@@ -59,7 +61,8 @@ public class ColdStartBenchmark {
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     @Fork(value = 1, warmups = 1)
     public WordIndex ColdStartJNAIndexCreation() throws Exception {
-        try (WordIndex index = new JNAWordIndex(file, 16, 64, 10, true)) {
+        try (WordIndex index = new JNAWordIndex(file, new WhitespaceTextAnalyzer(),
+                16, 64, 10, true)) {
             return index;
         }
     }
@@ -70,7 +73,8 @@ public class ColdStartBenchmark {
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     @Fork(value = 1, warmups = 1)
     public WordIndex coldStartFFMIndexCreation() throws Exception {
-        try (WordIndex index = new FFMWordIndex(file, 16, 64, 10, true)) {
+        try (WordIndex index = new FFMWordIndex(file, new WhitespaceTextAnalyzer(),
+                16, 64, 10, true)) {
             return index;
         }
     }

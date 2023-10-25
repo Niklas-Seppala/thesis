@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     org_nse_thesis_wordindex_jni_JNIWordIndexBindings
  * Method:    wordIndexOpen
- * Signature: (Ljava/lang/String;JJZ)J
+ * Signature: (Ljava/lang/String;IJJZ)J
  */
 JNIEXPORT jlong JNICALL Java_org_nse_thesis_wordindex_jni_JNIWordIndexBindings_wordIndexOpen
-  (JNIEnv *, jclass, jstring, jlong, jlong, jboolean);
+  (JNIEnv *, jclass, jstring, jint, jlong, jlong, jboolean);
 
 /*
  * Class:     org_nse_thesis_wordindex_jni_JNIWordIndexBindings

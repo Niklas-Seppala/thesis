@@ -14,6 +14,10 @@ import java.io.IOException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class JNIWordIndexTest extends WordIndexTestBase {
+    static {
+        JNIWordIndexBindings.load("build/libs/wordindex.so");
+    }
+
     @Test
     void testGetWords() {
         try (WordIndex index = new JNIWordIndex(TEST_FILE, this.getAnalyzer(),

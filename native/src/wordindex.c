@@ -60,8 +60,8 @@ static ssize_t normalize_word_token(const char *w_token, char **norm_word,
 // Public API
 // ------------------------------------------------------------
 
-WordIndex *file_word_index_open(const char *filepath, size_t capacity,
-                                size_t word_buffer_size, bool compact) {
+WordIndex *file_word_index_open(const char *filepath, enum index_analyzer analyzer,
+                                size_t capacity, size_t word_buffer_size, bool compact) {
     NONNULL(filepath);
     WordIndex *index = malloc(sizeof(WordIndex));
     if (index == NULL) {
@@ -89,7 +89,7 @@ WordIndex *file_word_index_open(const char *filepath, size_t capacity,
     memccpy(fname, filepath, '\0', fpath_len);
     index->fname = fname;
 
-    index->analyzer = TEXT;
+    index->analyzer = analyzer;
     index->word_count = 0;
     FILE *file = fopen(index->fname, "r");
     if (file != NULL) {
