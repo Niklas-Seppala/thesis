@@ -1,6 +1,7 @@
 package org.nse.thesis.wordindex.pojo;
 
 import org.junit.jupiter.api.Test;
+import org.nse.thesis.wordindex.WordIndexTestBase;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -11,8 +12,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class BufferedWordTokenizerTest {
-
+class BufferedWordTokenizerTest extends WordIndexTestBase {
     @Test
     public void testReading() {
         String text =
@@ -27,7 +27,7 @@ Eight nine ten.
             int truncateOffset = 0;
             while ((nBytes = stream.read(readBuffer, truncateOffset, readBuffer.length - truncateOffset)) > 0) {
                 final int bufferContentLength = nBytes + truncateOffset;
-                final BufferedWordTokenizer tokenizer = new BufferedWordTokenizer(readBuffer, bufferContentLength);
+                final BufferedWordTokenizer tokenizer = new BufferedWordTokenizer(readBuffer, bufferContentLength, getAnalyzer());
                 for (WordToken token: tokenizer) {
                     System.out.println(token);
                 }
@@ -42,7 +42,7 @@ Eight nine ten.
     @Test
     public void truncatesWhenWordIsNotFinishedFullBufferRe2ad() {
         byte[] readBuffer = new byte[256];
-        BufferedWordTokenizer tokenizer = new BufferedWordTokenizer(readBuffer, 0);
+        BufferedWordTokenizer tokenizer = new BufferedWordTokenizer(readBuffer, 0, getAnalyzer());
         assertFalse(tokenizer.iterator().hasNext());
     }
 
@@ -58,7 +58,7 @@ Eight nine ten.
                 new WordToken("three", 8)
         ).iterator();
 
-        BufferedWordTokenizer tokenizer = new BufferedWordTokenizer(readBuffer, str.length());
+        BufferedWordTokenizer tokenizer = new BufferedWordTokenizer(readBuffer, str.length(), getAnalyzer());
         tokenizer.iterator().forEachRemaining(it -> {
             assertEquals(correctTokens.next(), it);
         });
@@ -83,7 +83,7 @@ Eight nine ten.
                 new WordToken("five", 19)
         ).iterator();
 
-        BufferedWordTokenizer tokenizer = new BufferedWordTokenizer(readBuffer, str.length());
+        BufferedWordTokenizer tokenizer = new BufferedWordTokenizer(readBuffer, str.length(), getAnalyzer());
         tokenizer.iterator().forEachRemaining(it -> {
             assertEquals(correctTokens.next(), it);
         });
@@ -104,7 +104,7 @@ Eight nine ten.
                 new WordToken("five", 19)
         ).iterator();
 
-        BufferedWordTokenizer tokenizer = new BufferedWordTokenizer(readBuffer, str.length());
+        BufferedWordTokenizer tokenizer = new BufferedWordTokenizer(readBuffer, str.length(), getAnalyzer());
         tokenizer.iterator().forEachRemaining(it -> {
             assertEquals(correctTokens.next(), it);
         });

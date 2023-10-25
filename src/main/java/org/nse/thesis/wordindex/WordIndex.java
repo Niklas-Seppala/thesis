@@ -1,6 +1,7 @@
 package org.nse.thesis.wordindex;
 
 import org.jetbrains.annotations.NotNull;
+import org.nse.thesis.wordindex.pojo.IndexAnalyzer;
 
 import java.io.FileNotFoundException;
 import java.util.Collection;
@@ -14,7 +15,7 @@ public interface WordIndex extends AutoCloseable {
 
     @FunctionalInterface
     interface Provider {
-        WordIndex indexFrom(String path) throws FileNotFoundException;
+        WordIndex indexFrom(String path, IndexAnalyzer analyzer) throws FileNotFoundException;
     }
 
 

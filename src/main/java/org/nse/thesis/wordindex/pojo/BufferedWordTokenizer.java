@@ -10,6 +10,8 @@ public class BufferedWordTokenizer implements Iterable<WordToken> {
     private final List<WordToken> wordTokens;
     private int truncate = 0;
 
+    private final IndexAnalyzer analyzer;
+
     private boolean isWhitespace (byte b) {
         return Character.isWhitespace((char)b);
     }
@@ -17,12 +19,13 @@ public class BufferedWordTokenizer implements Iterable<WordToken> {
     private int storeToken(byte[] buffer, int wordStart, int wordEnd) {
         String word = new String(buffer, wordStart, wordEnd - wordStart);
         if (!(word.isBlank() || word.isEmpty())) {
-            this.wordTokens.add(new WordToken(JavaWordIndex.normalize( word ), wordStart));
+            this.wordTokens.add(new WordToken(JavaWordIndex.normalize(word, this.analyzer), wordStart));
         }
         return wordEnd + 1;
     }
 
-    public BufferedWordTokenizer(byte[] buffer, int nBytes) {
+    public BufferedWordTokenizer(byte[] buffer, int nBytes, IndexAnalyzer analyzer) {
+        this.analyzer = analyzer;
         this.wordTokens = new ArrayList<>();
         for (int wordEnd = 0, wordStart = 0; wordEnd < nBytes; wordEnd++) {
             if (wordEnd == nBytes - 1) {

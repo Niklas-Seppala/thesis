@@ -14,7 +14,10 @@ import java.util.List;
 public class LineWordTokenizer implements Iterable<WordToken> {
     private final List<WordToken> tokens;
 
-    public LineWordTokenizer(@NotNull String line) {
+    private final IndexAnalyzer analyzer;
+
+    public LineWordTokenizer(@NotNull String line,  @NotNull IndexAnalyzer analyzer) {
+        this.analyzer = analyzer;
         this.tokens = new ArrayList<>();
         this.tokenizeLine(line);
     }
@@ -52,7 +55,7 @@ public class LineWordTokenizer implements Iterable<WordToken> {
     private int storeToken(@NotNull String line, int wordStart, int wordEnd) {
         String token = line.substring(wordStart, wordEnd);
         if (!(token.isBlank() || token.isEmpty())) {
-            this.tokens.add(new WordToken(JavaWordIndex.normalize(token), wordStart));
+            this.tokens.add(new WordToken(JavaWordIndex.normalize(token, this.analyzer), wordStart));
         }
         return wordEnd + 1;
     }

@@ -3,15 +3,15 @@ package org.nse.thesis.wordindex.ffm;
 import org.junit.jupiter.api.Test;
 import org.nse.thesis.wordindex.WordContextIterator;
 import org.nse.thesis.wordindex.WordIndex;
+import org.nse.thesis.wordindex.WordIndexTestBase;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class FFMWordIndexTest {
+class FFMWordIndexTest extends WordIndexTestBase {
 
     @Test
     void getWords() throws Exception {
         final WordIndex.ContextBytes ctx = WordIndex.ContextBytes.SMALL_CONTEXT;
-
         try (WordIndex index = new FFMWordIndex("src/test/resources/bible.txt",
                 1 << 8,
                 8192, 4096, true)) {

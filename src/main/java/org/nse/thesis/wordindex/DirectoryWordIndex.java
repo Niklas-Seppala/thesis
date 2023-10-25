@@ -1,6 +1,7 @@
 package org.nse.thesis.wordindex;
 
 import org.jetbrains.annotations.NotNull;
+import org.nse.thesis.wordindex.pojo.IndexAnalyzer;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -12,8 +13,10 @@ import java.util.stream.Collectors;
 public class DirectoryWordIndex implements AutoCloseable {
     private final Map<String, WordIndex> indexMap;
     private final String dirPath;
+    private final IndexAnalyzer analyzer;
 
-    public DirectoryWordIndex(@NotNull String dirPath, @NotNull WordIndex.Provider indexProvider)
+    public DirectoryWordIndex(@NotNull String dirPath, @NotNull IndexAnalyzer analyzer,
+                              @NotNull WordIndex.Provider indexProvider)
             throws FileNotFoundException {
         final Path path = Path.of(dirPath);
 
@@ -25,6 +28,7 @@ public class DirectoryWordIndex implements AutoCloseable {
                     String.format("%s is not a directory", dirPath));
         }
         this.dirPath = path.toAbsolutePath().toString();
+        this.analyzer = analyzer;
         File dir = path.toFile();
 
         this.indexMap = new HashMap<>();
@@ -45,7 +49,7 @@ public class DirectoryWordIndex implements AutoCloseable {
             if (!indexMap.containsKey(fileName)) {
                 try {
                     WordIndex index =
-                            indexProvider.indexFrom(file.getAbsolutePath());
+                            indexProvider.indexFrom(file.getAbsolutePath(), this.analyzer);
                     this.indexMap.put(fileName, index);
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();

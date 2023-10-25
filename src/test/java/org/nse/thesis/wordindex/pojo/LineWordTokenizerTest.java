@@ -2,17 +2,16 @@ package org.nse.thesis.wordindex.pojo;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.nse.thesis.wordindex.pojo.LineWordTokenizer;
-import org.nse.thesis.wordindex.pojo.WordToken;
+import org.nse.thesis.wordindex.WordIndexTestBase;
 
 import java.util.Iterator;
 import java.util.List;
 
-class LineWordTokenizerTest {
+class LineWordTokenizerTest extends WordIndexTestBase {
 
     @Test
     void nextToken() {
-        LineWordTokenizer tokenizer = new LineWordTokenizer("this is a line");
+        LineWordTokenizer tokenizer = new LineWordTokenizer("this is a line", getAnalyzer());
         for (WordToken token : tokenizer) {
             System.out.println(token);
         }
@@ -21,7 +20,7 @@ class LineWordTokenizerTest {
     @Test
     public void hasNext() {
         Iterator<WordToken> tokenizer = new LineWordTokenizer(
-                "This is a line").iterator();
+                "This is a line", getAnalyzer()).iterator();
         Assertions.assertTrue(tokenizer.hasNext());
         tokenizer.next();
         Assertions.assertTrue(tokenizer.hasNext());
@@ -41,7 +40,7 @@ class LineWordTokenizerTest {
                 new WordToken("a", 9),
                 new WordToken("line", 11)
         ).iterator();
-        new LineWordTokenizer("This is; a line.").iterator().forEachRemaining(token ->
+        new LineWordTokenizer("This is; a line.", getAnalyzer()).iterator().forEachRemaining(token ->
                 Assertions.assertEquals(correctTokens.next(), token)
         );
     }
@@ -54,7 +53,7 @@ class LineWordTokenizerTest {
                 new WordToken("a", 10),
                 new WordToken("line", 12)
         ).iterator();
-        new LineWordTokenizer("  This is a line").iterator().forEachRemaining(token ->
+        new LineWordTokenizer("  This is a line", getAnalyzer()).iterator().forEachRemaining(token ->
                 Assertions.assertEquals(correctTokens.next(), token)
         );
     }
@@ -68,7 +67,7 @@ class LineWordTokenizerTest {
                 new WordToken("a", 10),
                 new WordToken("line", 12)
         ).iterator();
-        new LineWordTokenizer("  This is a line  ").iterator().forEachRemaining(token ->
+        new LineWordTokenizer("  This is a line  ", getAnalyzer()).iterator().forEachRemaining(token ->
                 Assertions.assertEquals(correctTokens.next(), token)
         );
     }
@@ -81,7 +80,7 @@ class LineWordTokenizerTest {
                 new WordToken("a", 15),
                 new WordToken("line", 20)
         ).iterator();
-        new LineWordTokenizer("  This,   is.  a    line!  ").iterator().forEachRemaining(
+        new LineWordTokenizer("  This,   is.  a    line!  ", getAnalyzer()).iterator().forEachRemaining(
                 token ->
                         Assertions.assertEquals(correctTokens.next(), token)
         );

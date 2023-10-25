@@ -24,17 +24,22 @@ public class JavaWordIndex implements WordIndex {
     private final String path;
     private final Map<@NotNull String, @NotNull WordEntry> index = new HashMap<>();
 
+    private final IndexAnalyzer analyzer;
+
     /**
      * Creates Word index over specified text file.
      *
      * @param path Path to text file to be indexed.
-     * @throws FileNotFoundException When file path is invalid
+     * @param analyzer Analyzer used in tokenizing text to words.
+     * @throws FileNotFoundException When file path is invalid.
      */
-    public JavaWordIndex(@NotNull String path) throws FileNotFoundException {
+    public JavaWordIndex(@NotNull String path, @NotNull IndexAnalyzer analyzer)
+            throws FileNotFoundException {
         if (Files.notExists(Path.of(path))) {
             throw new FileNotFoundException(path);
         }
         this.path = path;
+        this.analyzer = analyzer;
         this.doIndexing();
     }
 
@@ -57,10 +62,10 @@ public class JavaWordIndex implements WordIndex {
      * @param word Word to normalize
      * @return Normalized word
      */
-    public static String normalize(String word) {
+    public static String normalize(String word, IndexAnalyzer analyzer) {
         String token = null;
         for (int i = 0; i < word.length(); i++) {
-            if (!Character.isLetterOrDigit(word.charAt(i))) {
+            if (analyzer.breakAt(word.charAt(i))) {
                 token = word.substring(0, i);
                 break;
             }
@@ -87,7 +92,7 @@ public class JavaWordIndex implements WordIndex {
     @Override
     public @NotNull Collection<String> getWords(@NotNull String word,
                                                 @NotNull WordIndex.ContextBytes ctx) {
-        WordEntry entry = this.index.get(normalize(word));
+        WordEntry entry = this.index.get(normalize(word, this.analyzer));
         if (entry == null) {
             return List.of();
         }
@@ -124,7 +129,7 @@ public class JavaWordIndex implements WordIndex {
     public @NotNull WordContextIterator iterateWords(@NotNull String word,
                                                      @NotNull WordIndex.ContextBytes ctx)
             throws FileNotFoundException {
-        WordEntry entry = this.index.get(normalize(word));
+        WordEntry entry = this.index.get(normalize(word, this.analyzer));
         if (entry == null) {
             return (WordContextIterator) (Object) Collections.emptyIterator();
         }
@@ -153,7 +158,7 @@ public class JavaWordIndex implements WordIndex {
             int position = 0;
             String line;
             while ((line = file.readLine()) != null) {
-                for (WordToken token : new LineWordTokenizer(line)) {
+                for (WordToken token : new LineWordTokenizer(line, analyzer)) {
                     WordEntry existing = this.index.get(token.word());
                     if (existing != null) {
                         existing.addFilePosition(position + token.position());

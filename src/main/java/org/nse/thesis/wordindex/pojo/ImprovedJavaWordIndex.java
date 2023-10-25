@@ -4,8 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import org.nse.thesis.wordindex.WordContextIterator;
 import org.nse.thesis.wordindex.WordIndex;
 
-import java.io.*;
-import java.nio.ByteBuffer;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,17 +19,22 @@ public class ImprovedJavaWordIndex implements WordIndex {
     private final String path;
     private final Map<@NotNull String, @NotNull WordEntry> index = new HashMap<>();
 
+    private final IndexAnalyzer analyzer;
+
     /**
      * Creates Word index over specified text file.
      *
      * @param path Path to text file to be indexed.
+     * @param analyzer Analyzer used in tokenizing text into words.
      * @throws FileNotFoundException When file path is invalid
      */
-    public ImprovedJavaWordIndex(@NotNull String path) throws FileNotFoundException {
+    public ImprovedJavaWordIndex(@NotNull String path, @NotNull IndexAnalyzer analyzer)
+            throws FileNotFoundException {
         if (Files.notExists(Path.of(path))) {
             throw new FileNotFoundException(path);
         }
         this.path = path;
+        this.analyzer = analyzer;
         this.doIndexing();
     }
 
@@ -45,29 +51,6 @@ public class ImprovedJavaWordIndex implements WordIndex {
     }
 
     /**
-     * Normalizes the word by removing punctuation characters, and
-     * changing all characters to lowercase.
-     *
-     * @param word Word to normalize
-     * @return Normalized word
-     */
-    public static String normalize(String word) {
-        String token = null;
-        for (int i = 0; i < word.length(); i++) {
-            if (!Character.isLetterOrDigit(word.charAt(i))) {
-                token = word.substring(0, i);
-                break;
-            }
-        }
-        if (token == null) {
-            token = word;
-        }
-        return token.toLowerCase();
-
-    }
-
-
-    /**
      * Query the index for all occurrences of words from indexed file, with specified
      * amount of context, on both sides of the word.
      * <pre>
@@ -81,13 +64,13 @@ public class ImprovedJavaWordIndex implements WordIndex {
     @Override
     public @NotNull Collection<String> getWords(@NotNull String word,
                                                 @NotNull WordIndex.ContextBytes ctx) {
-        WordEntry entry = this.index.get(normalize(word));
+        WordEntry entry = this.index.get(JavaWordIndex.normalize(word, this.analyzer));
         if (entry == null) {
             return List.of();
         }
 
         List<String> results = new ArrayList<>();
-        try (final RandomAccessFile file = new RandomAccessFile(this.path, READ_MODE)){
+        try (final RandomAccessFile file = new RandomAccessFile(this.path, READ_MODE)) {
             byte[] buffer = new byte[(ctx.size() << 1) + entry.getWord().length()];
             for (Integer pos : entry.getFilePositions()) {
                 int actualReadLength = getActualReadLength(ctx, pos, buffer.length);
@@ -118,7 +101,7 @@ public class ImprovedJavaWordIndex implements WordIndex {
     public @NotNull WordContextIterator iterateWords(@NotNull String word,
                                                      @NotNull WordIndex.ContextBytes ctx)
             throws FileNotFoundException {
-        WordEntry entry = this.index.get(normalize(word));
+        WordEntry entry = this.index.get(JavaWordIndex.normalize(word, this.analyzer));
         if (entry == null) {
             return (WordContextIterator) (Object) Collections.emptyIterator();
         }
@@ -143,15 +126,15 @@ public class ImprovedJavaWordIndex implements WordIndex {
      * to words.
      */
     private void doIndexing() {
-        try (final RandomAccessFile file = new RandomAccessFile(path, READ_MODE)){
+        try (final RandomAccessFile file = new RandomAccessFile(path, READ_MODE)) {
             final byte[] readBuffer = new byte[4096];
             int position = 0;
             int nBytes;
             int truncatedBytes = 0;
             while ((nBytes = file.read(readBuffer, truncatedBytes, readBuffer.length - truncatedBytes)) > 0) {
                 final int bufferContentLength = nBytes + truncatedBytes;
-                final BufferedWordTokenizer tokenizer = new BufferedWordTokenizer(readBuffer, bufferContentLength);
-                for (WordToken token: tokenizer) {
+                final BufferedWordTokenizer tokenizer = new BufferedWordTokenizer(readBuffer, bufferContentLength, this.analyzer);
+                for (WordToken token : tokenizer) {
                     WordEntry existing = this.index.get(token.word());
                     if (existing != null) {
                         existing.addFilePosition(position + token.position());
@@ -205,7 +188,7 @@ public class ImprovedJavaWordIndex implements WordIndex {
          * @param entry Word file Positions to iterate over.
          */
         protected JavaWordContextIterator(@NotNull RandomAccessFile file, @NotNull WordIndex.ContextBytes ctx,
-                                       @NotNull WordEntry entry) {
+                                          @NotNull WordEntry entry) {
             this.file = file;
             this.ctx = ctx;
             this.positions = entry.getFilePositions().iterator();

@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.nse.thesis.wordindex.WordContextIterator;
 import org.nse.thesis.wordindex.WordIndex;
+import org.nse.thesis.wordindex.WordIndexTestBase;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -11,7 +12,7 @@ import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class JNIWordIndexTest {
+class JNIWordIndexTest extends WordIndexTestBase {
 
     public static final String TEST_FILE = "src/test/resources/bible.txt";
     private final String searchWord = "god";

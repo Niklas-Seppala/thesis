@@ -9,8 +9,9 @@ import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
 
-class DirectoryWordIndexTest {
+class DirectoryWordIndexTest extends WordIndexTestBase {
     private static final Map<String, Integer> wordToCountMap = new HashMap<>();
+
     static {
         wordToCountMap.put("power", 58);
         wordToCountMap.put("man", 118);
@@ -18,18 +19,19 @@ class DirectoryWordIndexTest {
         wordToCountMap.put("bound", 58);
     }
 
-    @Test
-    void test() throws FileNotFoundException {
-        try (DirectoryWordIndex index = new DirectoryWordIndex("src/test/resources/docs", ImprovedJavaWordIndex::new)) {
-            for (File file : index.files()) {
-                wordToCountMap.forEach((key, value) -> assertWordCount(index, file, key, value));
-            }
-        }
-    }
-
     private static void assertWordCount(DirectoryWordIndex index, File file, String man, int expected) {
         int manWordCount = index.getWordsWithContextInFile(file.getAbsolutePath(),
                 man, WordIndex.ContextBytes.SMALL_CONTEXT).size();
         Assertions.assertEquals(expected, manWordCount);
+    }
+
+    @Test
+    void test() throws FileNotFoundException {
+        try (DirectoryWordIndex index = new DirectoryWordIndex("src/test/resources/docs",
+                this.getAnalyzer(), ImprovedJavaWordIndex::new)) {
+            for (File file : index.files()) {
+                wordToCountMap.forEach((key, value) -> assertWordCount(index, file, key, value));
+            }
+        }
     }
 }
