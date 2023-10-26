@@ -1,0 +1,6 @@
+org.nse.thesis.wordindex
+org.nse.thesis.wordindex.analyzers
+org.nse.thesis.wordindex.ffm
+org.nse.thesis.wordindex.jna
+org.nse.thesis.wordindex.jni
+org.nse.thesis.wordindex.pojo
