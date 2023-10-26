@@ -1,7 +1,7 @@
 package org.nse.thesis.wordindex;
 
 import org.jetbrains.annotations.NotNull;
-import org.nse.thesis.wordindex.pojo.IndexAnalyzer;
+import org.nse.thesis.wordindex.analyzers.IndexAnalyzer;
 
 import java.io.FileNotFoundException;
 import java.util.Collection;
@@ -12,12 +12,6 @@ import java.util.Collection;
  * @author Niklas Seppälä
  */
 public interface WordIndex extends AutoCloseable {
-
-    @FunctionalInterface
-    interface Provider {
-        WordIndex indexFrom(String path, IndexAnalyzer analyzer) throws FileNotFoundException;
-    }
-
 
     /**
      * 4 byte mark on query buffer that indicates there is
@@ -80,5 +74,10 @@ public interface WordIndex extends AutoCloseable {
                 case LARGE_CONTEXT -> 128;
             };
         }
+    }
+
+    @FunctionalInterface
+    interface Provider {
+        WordIndex indexFrom(String path, IndexAnalyzer analyzer) throws FileNotFoundException;
     }
 }

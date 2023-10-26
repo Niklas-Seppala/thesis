@@ -5,7 +5,7 @@ import com.sun.jna.Pointer;
 import org.jetbrains.annotations.NotNull;
 import org.nse.thesis.wordindex.WordContextIterator;
 import org.nse.thesis.wordindex.WordIndex;
-import org.nse.thesis.wordindex.pojo.IndexAnalyzer;
+import org.nse.thesis.wordindex.analyzers.IndexAnalyzer;
 
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;

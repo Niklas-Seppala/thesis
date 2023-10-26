@@ -59,9 +59,7 @@ Eight nine ten.
         ).iterator();
 
         BufferedWordTokenizer tokenizer = new BufferedWordTokenizer(readBuffer, str.length(), getAnalyzer());
-        tokenizer.iterator().forEachRemaining(it -> {
-            assertEquals(correctTokens.next(), it);
-        });
+        tokenizer.iterator().forEachRemaining(it -> assertEquals(correctTokens.next(), it));
 
         assertTrue(tokenizer.didTruncate());
         assertEquals(2, tokenizer.getTruncatedBytes());
@@ -84,9 +82,7 @@ Eight nine ten.
         ).iterator();
 
         BufferedWordTokenizer tokenizer = new BufferedWordTokenizer(readBuffer, str.length(), getAnalyzer());
-        tokenizer.iterator().forEachRemaining(it -> {
-            assertEquals(correctTokens.next(), it);
-        });
+        tokenizer.iterator().forEachRemaining(it -> assertEquals(correctTokens.next(), it));
         assertFalse(tokenizer.didTruncate());
     }
 
@@ -105,9 +101,7 @@ Eight nine ten.
         ).iterator();
 
         BufferedWordTokenizer tokenizer = new BufferedWordTokenizer(readBuffer, str.length(), getAnalyzer());
-        tokenizer.iterator().forEachRemaining(it -> {
-            assertEquals(correctTokens.next(), it);
-        });
+        tokenizer.iterator().forEachRemaining(it -> assertEquals(correctTokens.next(), it));
 
         assertFalse(tokenizer.didTruncate());
         assertEquals(0, tokenizer.getTruncatedBytes());

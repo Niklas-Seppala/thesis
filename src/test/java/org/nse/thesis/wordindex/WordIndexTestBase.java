@@ -1,7 +1,7 @@
 package org.nse.thesis.wordindex;
 import org.junit.jupiter.api.BeforeEach;
-import org.nse.thesis.wordindex.pojo.IndexAnalyzer;
-import org.nse.thesis.wordindex.pojo.WhitespaceTextAnalyzer;
+import org.nse.thesis.wordindex.analyzers.EnglishAnalyzer;
+import org.nse.thesis.wordindex.analyzers.IndexAnalyzer;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -13,7 +13,7 @@ public class WordIndexTestBase {
 
     public static final String TEST_FILE = "src/test/resources/bible.txt";
     private final Map<String, Integer> wordOccurrences = new HashMap<>();
-    private final IndexAnalyzer analyzer = new WhitespaceTextAnalyzer();
+    private final IndexAnalyzer analyzer = new EnglishAnalyzer();
 
     protected Map<String, Integer> getWordOccurrences() {
         return this.wordOccurrences;

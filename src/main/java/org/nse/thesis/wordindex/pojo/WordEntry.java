@@ -7,18 +7,12 @@ import java.util.Objects;
 /**
  * Word entry data object, that hold file positions.
  * Object is comparable by its word.
+ *
+ * @author Niklas Seppälä
  */
 class WordEntry {
     private final String word;
     private final List<Integer> filePositions;
-
-    public String getWord() {
-        return word;
-    }
-
-    public List<Integer> getFilePositions() {
-        return filePositions;
-    }
 
     /**
      * Creates new WordEntry object, with initial file position.
@@ -30,6 +24,21 @@ class WordEntry {
         this.word = word;
         this.filePositions = new ArrayList<>();
         this.filePositions.add(initial);
+    }
+
+    /**
+     * @return Get the word of the word entry.
+     */
+    public String getWord() {
+        return word;
+    }
+
+    /**
+     * @return Get pe positions where word appears in the indexed
+     * file.
+     */
+    public List<Integer> getFilePositions() {
+        return filePositions;
     }
 
     /**

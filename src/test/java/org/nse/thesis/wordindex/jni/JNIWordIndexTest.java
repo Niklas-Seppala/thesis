@@ -1,17 +1,8 @@
 package org.nse.thesis.wordindex.jni;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.nse.thesis.wordindex.WordContextIterator;
 import org.nse.thesis.wordindex.WordIndex;
 import org.nse.thesis.wordindex.WordIndexTestBase;
-import org.nse.thesis.wordindex.jna.JNAWordIndex;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class JNIWordIndexTest extends WordIndexTestBase {
     static {

@@ -76,7 +76,7 @@ public interface JNAWordIndexLibrary extends Library {
      * Library implementation singleton. Make sure you load library before
      * accessing it by {@link Impl#get()}.
      * <p>
-     *
+     * <p>
      * Load the library by {@link Impl#get(String)} or {@link Impl#load(String)}
      */
     class Impl {
@@ -84,11 +84,12 @@ public interface JNAWordIndexLibrary extends Library {
 
         /**
          * Loads native library and generates implementation to {@link JNAWordIndexLibrary}
+         *
          * @param libPath Path to shared native library.
          */
         public static void load(String libPath) {
             if (instance == null) {
-                synchronized(JNAWordIndexLibrary.class) {
+                synchronized (JNAWordIndexLibrary.class) {
                     if (instance == null) {
                         instance = Native.load(libPath, JNAWordIndexLibrary.class);
                     }
@@ -111,6 +112,7 @@ public interface JNAWordIndexLibrary extends Library {
 
         /**
          * Loads native library and returns instance.
+         *
          * @param libPath Path to shared native library.
          * @return Library instance.
          */

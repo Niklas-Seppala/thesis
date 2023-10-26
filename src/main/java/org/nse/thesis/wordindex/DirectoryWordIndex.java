@@ -1,7 +1,7 @@
 package org.nse.thesis.wordindex;
 
 import org.jetbrains.annotations.NotNull;
-import org.nse.thesis.wordindex.pojo.IndexAnalyzer;
+import org.nse.thesis.wordindex.analyzers.IndexAnalyzer;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -85,7 +85,7 @@ public class DirectoryWordIndex implements AutoCloseable {
 
     @Override
     public void close() {
-        for (WordIndex index: this.indexMap.values()) {
+        for (WordIndex index : this.indexMap.values()) {
             try {
                 index.close();
             } catch (Exception e) {

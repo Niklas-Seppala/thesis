@@ -8,7 +8,7 @@ public class ImprovedJavaWordIndexTest extends WordIndexTestBase {
 
     @Test
     void testGetWords() {
-        try (WordIndex index = new ImprovedJavaWordIndex(TEST_FILE, this.getAnalyzer())) {
+        try (WordIndex index = new BufferedJavaWordIndex(TEST_FILE, this.getAnalyzer())) {
             this.getWordOccurrences().forEach((word, count) -> this.checkResultsBySize(index, word, count));
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -17,7 +17,7 @@ public class ImprovedJavaWordIndexTest extends WordIndexTestBase {
 
     @Test
     void testIterateWords() {
-        try (WordIndex index = new ImprovedJavaWordIndex(TEST_FILE, this.getAnalyzer())) {
+        try (WordIndex index = new BufferedJavaWordIndex(TEST_FILE, this.getAnalyzer())) {
             this.getWordOccurrences().forEach((word, count) -> this.checkIteratorResultsBySize(index, word, count));
         } catch (Exception e) {
             throw new RuntimeException(e);

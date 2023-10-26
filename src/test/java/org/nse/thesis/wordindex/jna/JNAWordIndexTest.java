@@ -4,8 +4,6 @@ import org.junit.jupiter.api.Test;
 import org.nse.thesis.wordindex.WordIndex;
 import org.nse.thesis.wordindex.WordIndexTestBase;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 class JNAWordIndexTest extends WordIndexTestBase {
 
     static {

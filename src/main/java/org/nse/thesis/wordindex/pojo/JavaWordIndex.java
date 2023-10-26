@@ -3,6 +3,7 @@ package org.nse.thesis.wordindex.pojo;
 import org.jetbrains.annotations.NotNull;
 import org.nse.thesis.wordindex.WordContextIterator;
 import org.nse.thesis.wordindex.WordIndex;
+import org.nse.thesis.wordindex.analyzers.IndexAnalyzer;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -23,13 +24,12 @@ public class JavaWordIndex implements WordIndex {
     private static final String READ_MODE = "r";
     private final String path;
     private final Map<@NotNull String, @NotNull WordEntry> index = new HashMap<>();
-
     private final IndexAnalyzer analyzer;
 
     /**
      * Creates Word index over specified text file.
      *
-     * @param path Path to text file to be indexed.
+     * @param path     Path to text file to be indexed.
      * @param analyzer Analyzer used in tokenizing text to words.
      * @throws FileNotFoundException When file path is invalid.
      */

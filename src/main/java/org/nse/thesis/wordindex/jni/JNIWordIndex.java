@@ -3,7 +3,7 @@ package org.nse.thesis.wordindex.jni;
 import org.jetbrains.annotations.NotNull;
 import org.nse.thesis.wordindex.WordContextIterator;
 import org.nse.thesis.wordindex.WordIndex;
-import org.nse.thesis.wordindex.pojo.IndexAnalyzer;
+import org.nse.thesis.wordindex.analyzers.IndexAnalyzer;
 
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
@@ -30,7 +30,6 @@ public class JNIWordIndex implements WordIndex {
 
     private final long nativeHandle;
     private final String filepath;
-    private final IndexAnalyzer analyzer;
     private final int queryBufferSize;
 
     /**
@@ -58,7 +57,6 @@ public class JNIWordIndex implements WordIndex {
             throw new FileNotFoundException(path);
         }
         this.filepath = path;
-        this.analyzer = analyzer;
         this.queryBufferSize = Math.max(queryBufferSize, MIN_QUERY_BUFFER_SIZE);
 
         if (wordCapacityEstimate < MIN_WORD_CAPACITY_ESTIMATE) {

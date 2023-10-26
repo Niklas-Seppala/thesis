@@ -1,6 +1,7 @@
 package org.nse.thesis.wordindex.pojo;
 
 import org.jetbrains.annotations.NotNull;
+import org.nse.thesis.wordindex.analyzers.IndexAnalyzer;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -13,15 +14,17 @@ import java.util.List;
  */
 public class LineWordTokenizer implements Iterable<WordToken> {
     private final List<WordToken> tokens;
-
     private final IndexAnalyzer analyzer;
 
-    public LineWordTokenizer(@NotNull String line,  @NotNull IndexAnalyzer analyzer) {
+    public LineWordTokenizer(@NotNull String line, @NotNull IndexAnalyzer analyzer) {
         this.analyzer = analyzer;
         this.tokens = new ArrayList<>();
         this.tokenizeLine(line);
     }
 
+    /**
+     * @return Iterator that iterates over words tokenized in the line.
+     */
     @NotNull
     @Override
     public Iterator<WordToken> iterator() {
@@ -46,10 +49,9 @@ public class LineWordTokenizer implements Iterable<WordToken> {
     /**
      * Creates and stores WordToken from line.
      *
-     * @param line Line to create token from
+     * @param line      Line to create token from
      * @param wordStart Word start position in a line.
-     * @param wordEnd Word end position in the line.
-     *
+     * @param wordEnd   Word end position in the line.
      * @return Next position.
      */
     private int storeToken(@NotNull String line, int wordStart, int wordEnd) {

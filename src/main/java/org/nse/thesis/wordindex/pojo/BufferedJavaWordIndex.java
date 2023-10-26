@@ -3,6 +3,7 @@ package org.nse.thesis.wordindex.pojo;
 import org.jetbrains.annotations.NotNull;
 import org.nse.thesis.wordindex.WordContextIterator;
 import org.nse.thesis.wordindex.WordIndex;
+import org.nse.thesis.wordindex.analyzers.IndexAnalyzer;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -14,21 +15,24 @@ import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class ImprovedJavaWordIndex implements WordIndex {
+/**
+ * Same as functionality as {@link JavaWordIndex}, but indexing is
+ * improved by using buffered reading of the file.
+ */
+public class BufferedJavaWordIndex implements WordIndex {
     private static final String READ_MODE = "r";
     private final String path;
     private final Map<@NotNull String, @NotNull WordEntry> index = new HashMap<>();
-
     private final IndexAnalyzer analyzer;
 
     /**
      * Creates Word index over specified text file.
      *
-     * @param path Path to text file to be indexed.
+     * @param path     Path to text file to be indexed.
      * @param analyzer Analyzer used in tokenizing text into words.
      * @throws FileNotFoundException When file path is invalid
      */
-    public ImprovedJavaWordIndex(@NotNull String path, @NotNull IndexAnalyzer analyzer)
+    public BufferedJavaWordIndex(@NotNull String path, @NotNull IndexAnalyzer analyzer)
             throws FileNotFoundException {
         if (Files.notExists(Path.of(path))) {
             throw new FileNotFoundException(path);

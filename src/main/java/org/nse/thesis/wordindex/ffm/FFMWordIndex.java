@@ -3,10 +3,13 @@ package org.nse.thesis.wordindex.ffm;
 import org.jetbrains.annotations.NotNull;
 import org.nse.thesis.wordindex.WordContextIterator;
 import org.nse.thesis.wordindex.WordIndex;
-import org.nse.thesis.wordindex.pojo.IndexAnalyzer;
+import org.nse.thesis.wordindex.analyzers.IndexAnalyzer;
 
 import java.io.FileNotFoundException;
-import java.lang.foreign.*;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;

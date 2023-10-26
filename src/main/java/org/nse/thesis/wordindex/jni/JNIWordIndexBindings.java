@@ -3,11 +3,25 @@ package org.nse.thesis.wordindex.jni;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 
+
+/**
+ * Java Bindings to native library's functions.
+ * <p>
+ * Call {@link JNIWordIndexBindings#load(String)} before accessing
+ * any of the native library methods.
+ * </p>
+ */
 public class JNIWordIndexBindings {
     private static boolean loaded = false;
-    public static void load(String path) {
+
+    /**
+     * Loads the native library.
+     *
+     * @param libPath Path to native shared library.
+     */
+    public static void load(String libPath) {
         if (!loaded) {
-            System.load(Path.of(path).toAbsolutePath().toString());
+            System.load(Path.of(libPath).toAbsolutePath().toString());
             loaded = true;
         }
     }
@@ -24,7 +38,7 @@ public class JNIWordIndexBindings {
      * @return Handle to native WordIndex
      */
     public static native long wordIndexOpen(String filepath, int analyzer, long capacity,
-                                             long bufferSize, boolean compact);
+                                            long bufferSize, boolean compact);
 
     /**
      * Closes native WordIndex, releasing all native resources.
@@ -34,15 +48,19 @@ public class JNIWordIndexBindings {
     public static native void wordIndexClose(long handle);
 
     /**
+     * <p>
      * Reads words with context from indexed file in buffered manner. If buffer was not
      * big enough to read all results, iterator handle is returned. Next call to this
      * method should use that iterator as a parameter to continue where previous call
      * left.
+     * <br>
+     * </p>
+     * <b>Buffer byte protocol</b>
      * <p>
-     * <h3>Buffer byte protocol</h3>
      * Strings are written to read buffer as contiguous span of bytes, lead by 4 byte
      * integer, specifying string byte length. TERM_BUFFER_MARK == no more strings left
      * in the buffer.
+     * </p>
      * <p>
      * Example:
      * <pre>
@@ -60,11 +78,11 @@ public class JNIWordIndexBindings {
      * @return Word file position iterator.
      */
     public static native long wordIndexReadWithContextBuffered(long handle,
-                                                                ByteBuffer readBuffer,
-                                                                long readBufferSize,
-                                                                String word, int wordLen,
-                                                                int context,
-                                                                long wordIterator);
+                                                               ByteBuffer readBuffer,
+                                                               long readBufferSize,
+                                                               String word, int wordLen,
+                                                               int context,
+                                                               long wordIterator);
 
     /**
      * Closes native iterator, releasing its resources. Not closing it will cause a
