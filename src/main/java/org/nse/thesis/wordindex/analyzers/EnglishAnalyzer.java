@@ -1,6 +1,8 @@
 package org.nse.thesis.wordindex.analyzers;
 
 /**
+ * Analyzer for indexing english text into words.
+ *
  * @author Niklas Seppälä
  */
 public class EnglishAnalyzer implements IndexAnalyzer {

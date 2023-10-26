@@ -5,8 +5,10 @@ import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 
 /**
- * @author Niklas Seppälä
+ * JNA library interface for native word index shared library.
  * Get implementation of this interface with {@link Impl}
+ *
+ * @author Niklas Seppälä
  */
 public interface JNAWordIndexLibrary extends Library {
 
@@ -29,7 +31,7 @@ public interface JNAWordIndexLibrary extends Library {
      * method should use that iterator as a parameter to continue where previous call
      * left.
      * <p>
-     * <h3>Buffer byte protocol</h3>
+     * <b>Buffer byte protocol</b>
      * Strings are written to read buffer as contiguous span of bytes, lead by 4 byte
      * integer, specifying string byte length. TERM_BUFFER_MARK == no more strings left
      * in the buffer.
@@ -75,11 +77,9 @@ public interface JNAWordIndexLibrary extends Library {
     /**
      * Library implementation singleton. Make sure you load library before
      * accessing it by {@link Impl#get()}.
-     * <p>
-     * <p>
      * Load the library by {@link Impl#get(String)} or {@link Impl#load(String)}
      */
-    class Impl {
+    abstract class Impl {
         private static volatile JNAWordIndexLibrary instance;
 
         /**

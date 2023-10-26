@@ -16,6 +16,11 @@ public class LineWordTokenizer implements Iterable<WordToken> {
     private final List<WordToken> tokens;
     private final IndexAnalyzer analyzer;
 
+    /**
+     *  Constructor
+     * @param line Line to tokenize.
+     * @param analyzer Analyzer used in tokenization process.
+     */
     public LineWordTokenizer(@NotNull String line, @NotNull IndexAnalyzer analyzer) {
         this.analyzer = analyzer;
         this.tokens = new ArrayList<>();

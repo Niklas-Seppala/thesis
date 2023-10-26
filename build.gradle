@@ -64,6 +64,12 @@ tasks.withType(JavaExec).configureEach {
     jvmArgs += "--enable-preview"
 }
 
+javadoc.options {
+    addBooleanOption('-enable-preview', true)
+    addStringOption('-release', '19')
+}
+
+clean.dependsOn('cleanJavadoc')
 clean.dependsOn('cleanNative')
 clean.dependsOn('cleanBenchmarks')
 assemble.dependsOn('compileJNI')

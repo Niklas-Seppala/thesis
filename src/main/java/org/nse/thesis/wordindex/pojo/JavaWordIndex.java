@@ -60,6 +60,7 @@ public class JavaWordIndex implements WordIndex {
      * changing all characters to lowercase.
      *
      * @param word Word to normalize
+     * @param analyzer Analyzer used in normalization
      * @return Normalized word
      */
     public static String normalize(String word, IndexAnalyzer analyzer) {

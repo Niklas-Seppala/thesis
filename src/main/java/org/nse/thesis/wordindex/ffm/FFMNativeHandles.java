@@ -6,7 +6,7 @@ import java.nio.file.Path;
 
 /**
  * Container record that holds function handles to native library.
- * <h3>Usage</h3>
+ * <b>Usage</b>
  * <ol>
  *      <li> Load the library with {@link FFMNativeHandles#load(String)} to load the library before
  *           accessing the singleton </li>
@@ -34,8 +34,8 @@ public record FFMNativeHandles(MethodHandle openIndex, MethodHandle closeIndex,
     private volatile static FFMNativeHandles INSTANCE;
 
     /**
-     * @return The singleton instance of native function handles
-     * container.
+     * Get the singleton instance of native function handles.
+     * @return The singleton instance.
      */
     public static FFMNativeHandles get() {
         if (INSTANCE == null) {

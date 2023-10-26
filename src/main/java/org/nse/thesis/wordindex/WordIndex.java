@@ -12,14 +12,27 @@ import java.util.Collection;
  * @author Niklas Seppälä
  */
 public interface WordIndex extends AutoCloseable {
-
     /**
      * 4 byte mark on query buffer that indicates there is
      * no more bytes to read.
      */
     int TERM_BUFFER_MARK = 0;
+
+    /**
+     * When index is queried, this is the minimum buffer size results
+     * are read into, IF index supports buffered reading.
+     */
     int MIN_QUERY_BUFFER_SIZE = 512;
+
+    /**
+     * When indexed file is read, this is the minimum buffer size,
+     * IF index supports buffered reading.
+     */
     int MIN_INDEXING_BUFFER_SIZE = 4096;
+
+    /**
+     * Index hash container is at least this big.
+     */
     int MIN_WORD_CAPACITY_ESTIMATE = 64;
 
     /**
@@ -38,7 +51,9 @@ public interface WordIndex extends AutoCloseable {
      *
      * @param word Word to search for.
      * @param ctx  The amount of context bytes to surround the word.
+     *
      * @return Iterator that iterates over the results.
+     * @throws FileNotFoundException If indexed file was deleted.
      */
     @NotNull WordContextIterator iterateWords(@NotNull String word,
                                               @NotNull WordIndex.ContextBytes ctx)
@@ -66,6 +81,10 @@ public interface WordIndex extends AutoCloseable {
          */
         LARGE_CONTEXT;
 
+        /**
+         * Get the size of this Context in bytes.
+         * @return Context in bytes.
+         */
         public int size() {
             return switch (this) {
                 case NO_CONTEXT -> 0;
@@ -76,8 +95,20 @@ public interface WordIndex extends AutoCloseable {
         }
     }
 
+    /**
+     * Provides {@link WordIndex} implementation.
+     */
     @FunctionalInterface
     interface Provider {
+        /**
+         * Creates index for specified file.
+         *
+         * @param path Path to the file to index.
+         * @param analyzer Analyzer used in indexing.
+         * @return Word index for specified file.
+         *
+         * @throws FileNotFoundException When file doesn't exist.
+         */
         WordIndex indexFrom(String path, IndexAnalyzer analyzer) throws FileNotFoundException;
     }
 }

@@ -18,6 +18,7 @@ public class BufferedWordTokenizer implements Iterable<WordToken> {
     private int truncate = 0;
 
     /**
+     * Constructor
      * @param buffer   Buffer to read tokenize words from.
      * @param nBytes   Size of the buffer.
      * @param analyzer Analyzer used in tokenization.
@@ -48,6 +49,7 @@ public class BufferedWordTokenizer implements Iterable<WordToken> {
     }
 
     /**
+     * Check if byte is Whitespace character.
      * @param b Byte to check
      * @return True if byte is whitespace character.
      */
@@ -72,7 +74,8 @@ public class BufferedWordTokenizer implements Iterable<WordToken> {
     }
 
     /**
-     * @return Iterator that iterates over words read from buffer.
+     * Iterator that iterates over this words read from buffer.
+     * @return Iterator.
      */
     @NotNull
     @Override
@@ -81,6 +84,8 @@ public class BufferedWordTokenizer implements Iterable<WordToken> {
     }
 
     /**
+     * Get the number of bytes truncated.
+     *
      * @return Number of bytes truncated, and moved to the start
      * of the buffer.
      */
@@ -89,6 +94,8 @@ public class BufferedWordTokenizer implements Iterable<WordToken> {
     }
 
     /**
+     * Check if buffer truncated.
+     *
      * @return True if truncation happened.
      */
     public boolean didTruncate() {
