@@ -4,8 +4,7 @@ def MOD_ACCS = '--enable-native-access=ALL-UNNAMED'
 def PREVIEW = '--enable-preview'
 def MAIN_CLASS = 'org.openjdk.jmh.Main'
 //def MAIN_CLASS = 'org.nse.benchmark.Main'
-def XMX = '-Xmx512M'
-def XMS = '-Xms256M'
+def XMX = '-Xmx4G'
 
 /**
  * Cleans generated class files from target dir.
@@ -45,9 +44,10 @@ tasks.register('benchmark', Task) {
             workingDir CWD
             commandLine 'java'
             args PREVIEW, MOD_ACCS,
-                    XMS, XMX,
+                    XMX,
                     '-cp', "target/benchmarks.jar:build/libs/*:${runtimeClasspath.asPath}",
-                    MAIN_CLASS
+                    MAIN_CLASS,
+                    "-prof", "gc"
         }
         println('\n\n')
     }

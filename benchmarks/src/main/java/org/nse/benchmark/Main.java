@@ -1,5 +1,6 @@
 package org.nse.benchmark;
 
+import org.openjdk.jmh.profile.GCProfiler;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
@@ -10,8 +11,9 @@ public class Main {
     public static void main(String[] args) throws RunnerException {
         Options options = new OptionsBuilder()
                 .include(ColdStartBenchmark.class.getSimpleName())
-                .include(TroughPutBenchmark.class.getSimpleName())
-                .include(DirectoryWordIndexBenchmark.class.getSimpleName())
+                .include(ThroughPutAccessBenchmark.class.getSimpleName())
+                .include(BulkBenchmark.class.getSimpleName())
+                .addProfiler(GCProfiler.class)
                 .build();
 
         new Runner(options).run();
