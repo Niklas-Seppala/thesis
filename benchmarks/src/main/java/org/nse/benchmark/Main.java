@@ -13,7 +13,6 @@ public class Main {
                 .include(ColdStartBenchmark.class.getSimpleName())
                 .include(ThroughPutAccessBenchmark.class.getSimpleName())
                 .include(BulkBenchmark.class.getSimpleName())
-                .addProfiler(GCProfiler.class)
                 .build();
 
         new Runner(options).run();

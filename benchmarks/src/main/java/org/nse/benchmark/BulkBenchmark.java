@@ -1,11 +1,13 @@
 package org.nse.benchmark;
 
 import org.nse.thesis.wordindex.WordIndex;
+import org.nse.thesis.wordindex.analyzers.EnglishAnalyzer;
+import org.nse.thesis.wordindex.ffm.FFMNativeHandles;
 import org.nse.thesis.wordindex.ffm.FFMWordIndex;
 import org.nse.thesis.wordindex.jna.JNAWordIndex;
+import org.nse.thesis.wordindex.jna.JNAWordIndexLibrary;
 import org.nse.thesis.wordindex.jni.JNIWordIndex;
 import org.nse.thesis.wordindex.jni.JNIWordIndexBindings;
-import org.nse.thesis.wordindex.pojo.ImprovedJavaWordIndex;
 import org.nse.thesis.wordindex.pojo.JavaWordIndex;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
@@ -17,6 +19,8 @@ public class BulkBenchmark {
     private static final int BULK = 64;
     static {
         JNIWordIndexBindings.load("build/libs/wordindex.so");
+        JNAWordIndexLibrary.Impl.load("build/libs/wordindex.so");
+        FFMNativeHandles.load("build/libs/wordindex.so");
     }
 
     static final String file = "testfiles/bible.txt";
@@ -29,22 +33,7 @@ public class BulkBenchmark {
     public void POJO_bulkCreate(Blackhole bh) throws Exception {
         WordIndex[] results = new WordIndex[BULK];
         for (int i = 0; i < results.length; i++) {
-            results[i] = new JavaWordIndex(file);
-        }
-        for (int i = 0; i < results.length; i++) {
-            WordIndex index = results[i];
-            index.close();
-        }
-    }
-
-    @Benchmark
-    @BenchmarkMode(Mode.SingleShotTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    @Fork(value = FORK, warmups = FORK)
-    public void POJO_OPTIMIZED_bulkCreate(Blackhole bh) throws Exception {
-        WordIndex[] results = new WordIndex[BULK];
-        for (int i = 0; i < results.length; i++) {
-            results[i] = new ImprovedJavaWordIndex(file);
+            results[i] = new JavaWordIndex(file, new EnglishAnalyzer());
         }
         for (int i = 0; i < results.length; i++) {
             WordIndex index = results[i];
@@ -60,7 +49,7 @@ public class BulkBenchmark {
     public void JNI_bulkCreate(Blackhole bh) throws Exception {
         WordIndex[] results = new WordIndex[BULK];
         for (int i = 0; i < results.length; i++) {
-            results[i] = new JNIWordIndex(file, 16, 64, 10, true);
+            results[i] = new JNIWordIndex(file, new EnglishAnalyzer(), 10000, 512, 512, false);
         }
         for (int i = 0; i < results.length; i++) {
             WordIndex index = results[i];
@@ -75,7 +64,7 @@ public class BulkBenchmark {
     public void JNA_bulkCreate(Blackhole bh) throws Exception {
         WordIndex[] results = new WordIndex[BULK];
         for (int i = 0; i < results.length; i++) {
-            results[i] = new JNAWordIndex(file, 16, 64, 10, true);
+            results[i] = new JNAWordIndex(file, new EnglishAnalyzer(), 10000, 10, 512, false);
         }
         for (int i = 0; i < results.length; i++) {
             WordIndex index = results[i];
@@ -90,7 +79,7 @@ public class BulkBenchmark {
     public void FFM_bulkCreate(Blackhole bh) throws Exception {
         WordIndex[] results = new WordIndex[BULK];
         for (int i = 0; i < results.length; i++) {
-            results[i] = new FFMWordIndex(file, 16, 64, 10, true);
+            results[i] = new FFMWordIndex(file, new EnglishAnalyzer(), 10000, 10, 512, false);
         }
         for (int i = 0; i < results.length; i++) {
             WordIndex index = results[i];

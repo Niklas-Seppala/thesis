@@ -46,8 +46,8 @@ tasks.register('benchmark', Task) {
             args PREVIEW, MOD_ACCS,
                     XMX,
                     '-cp', "target/benchmarks.jar:build/libs/*:${runtimeClasspath.asPath}",
-                    MAIN_CLASS,
-                    "-prof", "gc"
+                    MAIN_CLASS ,
+                   "-prof", "gc"
         }
         println('\n\n')
     }
