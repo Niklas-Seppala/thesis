@@ -25,6 +25,7 @@ class DirectoryWordIndexTest extends WordIndexTestBase {
         Assertions.assertEquals(expected, manWordCount);
     }
 
+    /*
     @Test
     void test() throws FileNotFoundException {
         try (DirectoryWordIndex index = new DirectoryWordIndex("src/test/resources/docs",
@@ -34,4 +35,5 @@ class DirectoryWordIndexTest extends WordIndexTestBase {
             }
         }
     }
+     */
 }

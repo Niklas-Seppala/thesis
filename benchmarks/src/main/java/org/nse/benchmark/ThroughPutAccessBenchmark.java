@@ -9,6 +9,7 @@ import org.nse.thesis.wordindex.jna.JNAWordIndex;
 import org.nse.thesis.wordindex.jna.JNAWordIndexLibrary;
 import org.nse.thesis.wordindex.jni.JNIWordIndex;
 import org.nse.thesis.wordindex.jni.JNIWordIndexBindings;
+import org.nse.thesis.wordindex.pojo.BufferedJavaWordIndex;
 import org.nse.thesis.wordindex.pojo.JavaWordIndex;
 import org.openjdk.jmh.annotations.*;
 
@@ -27,18 +28,19 @@ public class ThroughPutAccessBenchmark {
     }
 
     private WordIndex javaIndex;
+    private WordIndex javaBufferedIndex;
     private WordIndex jniIndex;
     private WordIndex jnaIndex;
     private WordIndex ffmIndex;
 
-
     @Setup
     public void setup() throws FileNotFoundException {
         IndexAnalyzer analyzer = new  EnglishAnalyzer();
-        javaIndex = new JavaWordIndex(file, analyzer);
-        jniIndex = new JNIWordIndex(file, analyzer, 16, 8192, 256, true);
-        jnaIndex = new JNAWordIndex(file, analyzer, 16, 8192, 256,true);
-        ffmIndex = new FFMWordIndex(file, analyzer, 16, 8192, 256, true);
+        javaIndex = new JavaWordIndex(file, analyzer, 10000);
+        javaBufferedIndex = new BufferedJavaWordIndex(file, analyzer, 10000);
+        jniIndex = new JNIWordIndex(file, analyzer, 10000, 8192, 256, true);
+        jnaIndex = new JNAWordIndex(file, analyzer, 10000, 8192, 256,true);
+        ffmIndex = new FFMWordIndex(file, analyzer, 10000, 8192, 256, true);
     }
 
     @TearDown
@@ -63,6 +65,14 @@ public class ThroughPutAccessBenchmark {
     @Fork(value = FORK, warmups = FORK)
     public Collection<String> POJO_indexWordAccess() {
         return javaIndex.getWords("Whereupon", WordIndex.ContextBytes.SMALL_CONTEXT);
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    @Fork(value = FORK, warmups = FORK)
+    public Collection<String> POJO_BUFFERED_indexWordAccess() {
+        return javaBufferedIndex.getWords("Whereupon", WordIndex.ContextBytes.SMALL_CONTEXT);
     }
 
     @Benchmark

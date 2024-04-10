@@ -23,23 +23,26 @@ import java.util.stream.StreamSupport;
 public class JavaWordIndex implements WordIndex {
     private static final String READ_MODE = "r";
     private final String path;
-    private final Map<@NotNull String, @NotNull WordEntry> index = new HashMap<>();
+    private final Map<@NotNull String, @NotNull WordEntry> index;
     private final IndexAnalyzer analyzer;
 
     /**
      * Creates Word index over specified text file.
      *
-     * @param path     Path to text file to be indexed.
-     * @param analyzer Analyzer used in tokenizing text to words.
+     * @param path          Path to text file to be indexed.
+     * @param analyzer      Analyzer used in tokenizing text to words.
+     * @param wordEstimate  Estimated word count of the file.
      * @throws FileNotFoundException When file path is invalid.
      */
-    public JavaWordIndex(@NotNull String path, @NotNull IndexAnalyzer analyzer)
+    public JavaWordIndex(@NotNull String path, @NotNull IndexAnalyzer analyzer,
+                         int wordEstimate)
             throws FileNotFoundException {
         if (Files.notExists(Path.of(path))) {
             throw new FileNotFoundException(path);
         }
         this.path = path;
         this.analyzer = analyzer;
+        this.index = new HashMap<>(wordEstimate);
         this.doIndexing();
     }
 
