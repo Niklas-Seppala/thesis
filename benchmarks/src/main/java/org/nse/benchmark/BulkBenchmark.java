@@ -15,7 +15,7 @@ import org.openjdk.jmh.infra.Blackhole;
 import java.util.concurrent.TimeUnit;
 
 public class BulkBenchmark {
-    private static final int FORK = 1;
+    private static final int FORK = 5;
     private static final int BULK = 64;
     static {
         JNIWordIndexBindings.load("build/libs/wordindex.so");
@@ -49,7 +49,8 @@ public class BulkBenchmark {
     public void JNI_bulkCreate(Blackhole bh) throws Exception {
         WordIndex[] results = new WordIndex[BULK];
         for (int i = 0; i < results.length; i++) {
-            results[i] = new JNIWordIndex(file, new EnglishAnalyzer(), 10000, 512, 512, false);
+            results[i] = new JNIWordIndex(file, new EnglishAnalyzer(), 10000, 8192, 256,
+                    false);
         }
         for (int i = 0; i < results.length; i++) {
             WordIndex index = results[i];
@@ -64,7 +65,7 @@ public class BulkBenchmark {
     public void JNA_bulkCreate(Blackhole bh) throws Exception {
         WordIndex[] results = new WordIndex[BULK];
         for (int i = 0; i < results.length; i++) {
-            results[i] = new JNAWordIndex(file, new EnglishAnalyzer(), 10000, 10, 512, false);
+            results[i] = new JNAWordIndex(file, new EnglishAnalyzer(), 10000, 8192, 256, false);
         }
         for (int i = 0; i < results.length; i++) {
             WordIndex index = results[i];
@@ -79,7 +80,7 @@ public class BulkBenchmark {
     public void FFM_bulkCreate(Blackhole bh) throws Exception {
         WordIndex[] results = new WordIndex[BULK];
         for (int i = 0; i < results.length; i++) {
-            results[i] = new FFMWordIndex(file, new EnglishAnalyzer(), 10000, 10, 512, false);
+            results[i] = new FFMWordIndex(file, new EnglishAnalyzer(), 10000, 8192, 256, false);
         }
         for (int i = 0; i < results.length; i++) {
             WordIndex index = results[i];

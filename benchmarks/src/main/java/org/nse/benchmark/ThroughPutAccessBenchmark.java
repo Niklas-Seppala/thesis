@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 @State(Scope.Thread)
 public class ThroughPutAccessBenchmark {
-    static final int FORK = 1;
+    static final int FORK = 5;
     static final String file = "testfiles/small.txt";
     static {
         JNIWordIndexBindings.load("build/libs/wordindex.so");
@@ -36,9 +36,9 @@ public class ThroughPutAccessBenchmark {
     public void setup() throws FileNotFoundException {
         IndexAnalyzer analyzer = new  EnglishAnalyzer();
         javaIndex = new JavaWordIndex(file, analyzer);
-        jniIndex = new JNIWordIndex(file, analyzer, 16, 10, 512, true);
-        jnaIndex = new JNAWordIndex(file, analyzer, 16, 10, 512,true);
-        ffmIndex = new FFMWordIndex(file, analyzer, 16, 10, 512, true);
+        jniIndex = new JNIWordIndex(file, analyzer, 16, 8192, 256, true);
+        jnaIndex = new JNAWordIndex(file, analyzer, 16, 8192, 256,true);
+        ffmIndex = new FFMWordIndex(file, analyzer, 16, 8192, 256, true);
     }
 
     @TearDown

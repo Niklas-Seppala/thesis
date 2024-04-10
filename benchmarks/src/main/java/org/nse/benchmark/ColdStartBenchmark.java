@@ -19,7 +19,7 @@ import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 
 public class ColdStartBenchmark {
-    static final int FORK = 1;
+    static final int FORK = 5;
 
     static {
         JNIWordIndexBindings.load("build/libs/wordindex.so");
@@ -44,7 +44,7 @@ public class ColdStartBenchmark {
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     @Fork(value = FORK, warmups = FORK)
     public WordIndex JNI_coldStartIndexing() throws Exception {
-        try (WordIndex index = new JNIWordIndex(file, new EnglishAnalyzer(), 65536, 4096, 512,
+        try (WordIndex index = new JNIWordIndex(file, new EnglishAnalyzer(), 65536, 8192, 256,
                 false)) {
             return index;
         }
@@ -55,7 +55,7 @@ public class ColdStartBenchmark {
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     @Fork(value = FORK, warmups = FORK)
     public WordIndex JNA_coldStartIndexing() throws Exception {
-        try (WordIndex index = new JNAWordIndex(file, new EnglishAnalyzer(), 65536, 4096, 512,
+        try (WordIndex index = new JNAWordIndex(file, new EnglishAnalyzer(), 65536, 8192, 256,
                 false)) {
             return index;
         }
@@ -67,7 +67,7 @@ public class ColdStartBenchmark {
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     @Fork(value = FORK, warmups = FORK)
     public WordIndex FFM_coldStartIndexing() throws Exception {
-        try (WordIndex index = new FFMWordIndex(file, new EnglishAnalyzer(), 65536, 4096, 512,
+        try (WordIndex index = new FFMWordIndex(file, new EnglishAnalyzer(), 65536, 8192, 256,
                 false)) {
             return index;
         }
