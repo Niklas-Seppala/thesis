@@ -10,6 +10,12 @@
 VM version: JDK 19.0.2, OpenJDK 64-Bit Server VM, 19.0.2+7-Ubuntu-0ubuntu322.04
 VM invoker: /usr/lib/jvm/java-19-openjdk-amd64/bin/java
 VM options: --enable-preview --enable-native-access=ALL-UNNAMED -Xmx4G
+
+OS: Ubuntu 22.04.4 LTS x86_64 
+Kernel: 6.5.0-27-generic
+CPU: AMD Ryzen 5 1600X (12) @ 4.000GHz 
+GPU: NVIDIA GeForce GTX 1660 SUPER 
+Memory: 2964MiB / 15913MiB 
 ------------------------------------------------------------------------
 Benchmark                                                                    Mode  Cnt           Score         Error   Units
 ThroughPutAccessBenchmark.FFM_indexWordAccess                               thrpt   25      127497.151 ±     471.365   ops/s
