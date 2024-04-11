@@ -82,3 +82,29 @@ ColdStartBenchmark.POJO_coldStartIndexing:gc.alloc.rate.norm                   s
 ColdStartBenchmark.POJO_coldStartIndexing:gc.count                             ss                3.000                counts
 ColdStartBenchmark.POJO_coldStartIndexing:gc.time                              ss               32.000                    ms
 ```
+
+```
+Benchmark                                                  Mode  Cnt            Score       Error   Units
+BulkBenchmark.FFM_bulkCreate                               avgt    5        22917.703 ±   230.772   ms/op
+BulkBenchmark.FFM_bulkCreate:gc.alloc.rate                 avgt    5            0.005 ±     0.001  MB/sec
+BulkBenchmark.FFM_bulkCreate:gc.alloc.rate.norm            avgt    5       121684.800 ±  1919.534    B/op
+BulkBenchmark.FFM_bulkCreate:gc.count                      avgt    5              ≈ 0              counts
+BulkBenchmark.JNA_bulkCreate                               avgt    5        23173.047 ±   353.157   ms/op
+BulkBenchmark.JNA_bulkCreate:gc.alloc.rate                 avgt    5            0.006 ±     0.002  MB/sec
+BulkBenchmark.JNA_bulkCreate:gc.alloc.rate.norm            avgt    5       156864.000 ± 58687.945    B/op
+BulkBenchmark.JNA_bulkCreate:gc.count                      avgt    5              ≈ 0              counts
+BulkBenchmark.JNI_bulkCreate                               avgt    5        22634.564 ±   293.376   ms/op
+BulkBenchmark.JNI_bulkCreate:gc.alloc.rate                 avgt    5            0.001 ±     0.001  MB/sec
+BulkBenchmark.JNI_bulkCreate:gc.alloc.rate.norm            avgt    5        33292.800 ±    67.491    B/op
+BulkBenchmark.JNI_bulkCreate:gc.count                      avgt    5              ≈ 0              counts
+BulkBenchmark.POJO_BUFFERED_bulkCreate                     avgt    5        27412.861 ±   320.612   ms/op
+BulkBenchmark.POJO_BUFFERED_bulkCreate:gc.alloc.rate       avgt    5          980.082 ±    11.467  MB/sec
+BulkBenchmark.POJO_BUFFERED_bulkCreate:gc.alloc.rate.norm  avgt    5  28171934227.200 ±    67.491    B/op
+BulkBenchmark.POJO_BUFFERED_bulkCreate:gc.count            avgt    5          768.000              counts
+BulkBenchmark.POJO_BUFFERED_bulkCreate:gc.time             avgt    5         5375.000                  ms
+BulkBenchmark.POJO_bulkCreate                              avgt    5      1101182.601 ±  1501.674   ms/op
+BulkBenchmark.POJO_bulkCreate:gc.alloc.rate                avgt    5           30.735 ±     0.042  MB/sec
+BulkBenchmark.POJO_bulkCreate:gc.alloc.rate.norm           avgt    5  35489115219.200 ±    67.491    B/op
+BulkBenchmark.POJO_bulkCreate:gc.count                     avgt    5         1280.000              counts
+BulkBenchmark.POJO_bulkCreate:gc.time                      avgt    5        13195.000                  ms
+```

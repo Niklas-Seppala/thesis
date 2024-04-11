@@ -4,7 +4,7 @@ def MOD_ACCS = '--enable-native-access=ALL-UNNAMED'
 def PREVIEW = '--enable-preview'
 def MAIN_CLASS = 'org.openjdk.jmh.Main'
 //def MAIN_CLASS = 'org.nse.benchmark.Main'
-def XMX = '-Xmx4G'
+def XMX = '-Xmx512M'
 
 /**
  * Cleans generated class files from target dir.

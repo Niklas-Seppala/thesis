@@ -16,8 +16,10 @@ import org.openjdk.jmh.infra.Blackhole;
 import java.util.concurrent.TimeUnit;
 
 public class BulkBenchmark {
-    private static final int FORK = 5;
+    private static final int FORK = 1;
     private static final int BULK = 64;
+    private static final int ITER_SIZE = 256;
+
     static {
         JNIWordIndexBindings.load("build/libs/wordindex.so");
         JNAWordIndexLibrary.Impl.load("build/libs/wordindex.so");
@@ -27,79 +29,68 @@ public class BulkBenchmark {
     static final String file = "testfiles/bible.txt";
 
     @Benchmark
-    @BenchmarkMode(Mode.SingleShotTime)
+    @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     @Fork(value = FORK, warmups = FORK)
     public void POJO_bulkCreate(Blackhole bh) throws Exception {
-        WordIndex[] results = new WordIndex[BULK];
-        for (int i = 0; i < results.length; i++) {
-            results[i] = new JavaWordIndex(file, new EnglishAnalyzer(), 10000);
-        }
-        for (int i = 0; i < results.length; i++) {
-            WordIndex index = results[i];
-            index.close();
+        for (int i = 0; i < ITER_SIZE; i++) {
+            try (WordIndex index = new JavaWordIndex(file, new EnglishAnalyzer(),
+                    10000)) {
+                bh.consume(index);
+            }
         }
     }
 
     @Benchmark
-    @BenchmarkMode(Mode.SingleShotTime)
+    @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     @Fork(value = FORK, warmups = FORK)
     public void POJO_BUFFERED_bulkCreate(Blackhole bh) throws Exception {
-        WordIndex[] results = new WordIndex[BULK];
-        for (int i = 0; i < results.length; i++) {
-            results[i] = new BufferedJavaWordIndex(file, new EnglishAnalyzer(), 10000);
-        }
-        for (int i = 0; i < results.length; i++) {
-            WordIndex index = results[i];
-            index.close();
+        for (int i = 0; i < ITER_SIZE; i++) {
+            try (WordIndex index = new BufferedJavaWordIndex(file, new EnglishAnalyzer(),
+                    10000)) {
+                bh.consume(index);
+            }
         }
     }
 
 
     @Benchmark
-    @BenchmarkMode(Mode.SingleShotTime)
+    @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     @Fork(value = FORK, warmups = FORK)
     public void JNI_bulkCreate(Blackhole bh) throws Exception {
-        WordIndex[] results = new WordIndex[BULK];
-        for (int i = 0; i < results.length; i++) {
-            results[i] = new JNIWordIndex(file, new EnglishAnalyzer(), 10000, 8192, 256,
-                    false);
-        }
-        for (int i = 0; i < results.length; i++) {
-            WordIndex index = results[i];
-            index.close();
+        for (int i = 0; i < ITER_SIZE; i++) {
+            try (WordIndex index =new JNIWordIndex(file, new EnglishAnalyzer(), 10000, 8192, 256,
+                    false)) {
+                bh.consume(index);
+            }
         }
     }
 
     @Benchmark
-    @BenchmarkMode(Mode.SingleShotTime)
+    @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     @Fork(value = FORK, warmups = FORK)
     public void JNA_bulkCreate(Blackhole bh) throws Exception {
-        WordIndex[] results = new WordIndex[BULK];
-        for (int i = 0; i < results.length; i++) {
-            results[i] = new JNAWordIndex(file, new EnglishAnalyzer(), 10000, 8192, 256, false);
-        }
-        for (int i = 0; i < results.length; i++) {
-            WordIndex index = results[i];
-            index.close();
+        for (int i = 0; i < ITER_SIZE; i++) {
+            try (WordIndex index =new JNAWordIndex(file, new EnglishAnalyzer(), 10000, 8192, 256,
+                    false)) {
+                bh.consume(index);
+            }
         }
     }
 
     @Benchmark
-    @BenchmarkMode(Mode.SingleShotTime)
+    @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     @Fork(value = FORK, warmups = FORK)
     public void FFM_bulkCreate(Blackhole bh) throws Exception {
-        WordIndex[] results = new WordIndex[BULK];
-        for (int i = 0; i < results.length; i++) {
-            results[i] = new FFMWordIndex(file, new EnglishAnalyzer(), 10000, 8192, 256, false);
-        }
-        for (int i = 0; i < results.length; i++) {
-            WordIndex index = results[i];
-            index.close();
+        for (int i = 0; i < ITER_SIZE; i++) {
+            try (WordIndex index =new FFMWordIndex(file, new EnglishAnalyzer(), 10000, 8192, 256,
+                    false)) {
+                bh.consume(index);
+            }
         }
     }
 }
